@@ -1,12 +1,11 @@
 import { h, render } from 'preact'
 import { useState, useEffect, useRef } from 'preact/hooks'
-/** @jsx h */
 
 const SONGDATA = JSON.parse(document.getElementById('songdata').innerHTML)
 const KEY = {
   LEFT: 37,
-  RIGHT: 39,
-};
+  RIGHT: 39
+}
 
 // I cannot believe that js has no built-in way to do this!
 function map (obj, f) {
@@ -34,10 +33,10 @@ function load (orig) {
 function SetList (songs) {
   const [active, setActive] = useState(0)
   const activeRef = useRef(active)
-  const num_songs = Object.keys(songs).length
+  const numSongs = Object.keys(songs).length
   const keypress = (ev) => {
     if (ev.which === KEY.RIGHT) {
-      if (activeRef.current < num_songs - 1) {
+      if (activeRef.current < numSongs - 1) {
         activeRef.current += 1
         setActive(activeRef.current)
       }
@@ -55,57 +54,54 @@ function SetList (songs) {
     return () => window.removeEventListener('keydown', keypress)
   }, [active])
 
-  return h('div', null, map(songs, (i, song) => h(Song, {
-    index: parseInt(i),
-    song: song,
-    display: active === parseInt(i),
-    set: () => setActive(parseInt(i) + 1)
-  })))
-}
-
-function Song ({ index, song, display, set }) {
-  var attrs = {
-    'class': 'song ' + (display ? 'active' : '')
-    // onclick: set
-  }
-  return h(
-    'article',
-    attrs,
-    SongTitle(song),
-    ...map(song.sections, (name, section) => h(Section, { name: name, section: section }))
+  return (
+    <div>
+      {
+        map(songs, (i, song) => <Song
+            song={song}
+            display={active == parseInt(i)}
+        />)
+      }
+    </div>
   )
 }
 
-function SongTitle(song) {
+function Song ({ song, display }) {
+  return (
+    <article className={'song ' + (display ? 'active' : '')}>
+      <SongTitle song={song}/>
+      {map(song.sections, (name, section) => <Section name={name} section={section}/>)}
+    </article>
+  )
+}
+
+function SongTitle ({song}) {
   const keys = ['key', 'time', 'tempo']
   const parts = keys.map((k) => song[k]).filter(Boolean)
-
-  return h('header', { 'class': 'title' },
-    song['title'],
-    h('span', { 'class': 'info' }, parts.join(" | ")),
+  return (
+    <header class='title'>{ song['title'] }
+      <span class='info'>{ parts.join(' | ') }</span>
+    </header>
   )
-}
-
-function Toggle (cls, text, click) {
-  return h('span', { 'class': cls + ' toggle', onclick: click }, text)
 }
 
 function Section ({ name, section }) {
   const [collapsed, setCollapsed] = useState(false)
   const [chords, setChords] = useState(true)
-  const lines = section.split(/\n/).map((l) => h(Line, { line: l }))
+  const lines = section.split(/\n/)
   const toggleCollapsed = () => setCollapsed(!collapsed)
   const toggleChords = () => setChords(!chords)
   const _class = (collapsed ? 'collapsed ' : ' ') + (chords ? ' ' : 'hide-chords')
-  return h('section', { 'class': _class },
-    h('header', null,
-      Toggle('name', name, toggleCollapsed),
-      Toggle('collapse', ' ⯅', toggleCollapsed),
-      Toggle('expand', ' ⯆', toggleCollapsed),
-      ' ',
-      Toggle('show-chords', 'A♭', toggleChords)
-    ),
-    ...lines
+  return (
+    <section className={_class}>
+      <header>
+        <span class="name toggle" onclick={toggleCollapsed}>{name}</span>
+        <span class="collapse toggle" onclick={toggleCollapsed}> ⯅</span>
+        <span class="expand toggle" onclick={toggleCollapsed}> ⯆</span>
+        &nbsp;<span class="show-chords toggle" onclick={ toggleChords }>A♭</span>
+      </header>
+      {lines.map((l) => <Line line={l}/>)}
+    </section>
   )
 }
 
@@ -134,26 +130,26 @@ function Line ({ line }) {
     for (var i = 0; i < parts.length; i += 1) {
       const part = parts[i]
       const next = i + 1 < parts.length ? parts[i + 1] : 'END'
-      const first = part[0];
+      const first = part[0]
       const last = part[part.length - 1]
-      const before_space = (next[0] === ' ' || next === '')
+      const beforeSpace = (next[0] === ' ' || next === '')
       if (first === '[' && last === ']') {
         const chord = part.substring(1, part.length - 1)
-        const attrs = { 'class': 'chord ' + (before_space ? 'inspace' : 'inword') }
-        nodes.push(h('span', attrs, chord))
+        const cls = 'chord ' + (beforeSpace ? 'inspace' : 'inword')
+        nodes.push(<span className={cls}>{chord}</span>)
       } else if (first === '{' && last === '}') {
         const [directive, text] = part.substring(1, part.length - 1).split(':')
         switch (directive) {
           case 'comment':
-            nodes.push(h('span', { 'class': 'comment ' + (before_space ? 'inspace' : 'inword') }, text))
-            break;
+            nodes.push(<span className={'comment ' + (beforeSpace ? 'inspace' : 'inword')}>{text}</span>)
+            break
         }
       } else {
         nodes.push(part)
       }
     }
   }
-  return h('p', { 'class': 'line ' + _class }, ...nodes)
+  return <p className={'line ' + _class}>{nodes}</p>
 }
 
 var app = document.getElementById('songs')
