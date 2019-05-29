@@ -1,4 +1,4 @@
-import { h, render } from 'preact'
+import { h, render, Fragment } from 'preact'
 import { useState, useEffect, useRef } from 'preact/hooks'
 
 const SONGDATA = JSON.parse(document.getElementById('songdata').innerHTML)
@@ -30,7 +30,7 @@ function load (orig) {
 }
 
 // the main application component
-function SetList (songs) {
+function SetList ({ songs }) {
   const [active, setActive] = useState(0)
   const activeRef = useRef(active)
   const numSongs = Object.keys(songs).length
@@ -55,27 +55,22 @@ function SetList (songs) {
   }, [active])
 
   return (
-    <div>
-      {
-        map(songs, (i, song) => <Song
-            song={song}
-            display={active == parseInt(i)}
-        />)
-      }
-    </div>
+    <Fragment>
+      { songs.map((song, i) => <Song song={song} display={active === i} />) }
+    </Fragment>
   )
 }
 
 function Song ({ song, display }) {
   return (
     <article className={'song ' + (display ? 'active' : '')}>
-      <SongTitle song={song}/>
-      {map(song.sections, (name, section) => <Section name={name} section={section}/>)}
+      <SongTitle song={song} />
+      {map(song.sections, (name, section) => <Section name={name} section={section} />)}
     </article>
   )
 }
 
-function SongTitle ({song}) {
+function SongTitle ({ song }) {
   const keys = ['key', 'time', 'tempo']
   const parts = keys.map((k) => song[k]).filter(Boolean)
   return (
@@ -95,12 +90,12 @@ function Section ({ name, section }) {
   return (
     <section className={_class}>
       <header>
-        <span class="name toggle" onclick={toggleCollapsed}>{name}</span>
-        <span class="collapse toggle" onclick={toggleCollapsed}> ⯅</span>
-        <span class="expand toggle" onclick={toggleCollapsed}> ⯆</span>
-        &nbsp;<span class="show-chords toggle" onclick={ toggleChords }>A♭</span>
+        <span class='name toggle' onclick={toggleCollapsed}>{name}</span>
+        <span class='collapse toggle' onclick={toggleCollapsed}> ⯅</span>
+        <span class='expand toggle' onclick={toggleCollapsed}> ⯆</span>
+        &nbsp;<span class='show-chords toggle' onclick={toggleChords}>A♭</span>
       </header>
-      {lines.map((l) => <Line line={l}/>)}
+      {lines.map((l) => <Line line={l} />)}
     </section>
   )
 }
@@ -152,7 +147,7 @@ function Line ({ line }) {
   return <p className={'line ' + _class}>{nodes}</p>
 }
 
-var app = document.getElementById('songs')
+var app = document.getElementById('setlist')
 var songs = SONGDATA.map((song) => load(song))
 console.log(songs)
-render(h(SetList, songs), app)
+render(<SetList songs={songs} />, app)
