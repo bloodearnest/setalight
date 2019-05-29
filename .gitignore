@@ -1,5 +1,5 @@
 node_modules
 __pycache__
 venv
+dist/index.html
 dist/main.js
-dist/test.html

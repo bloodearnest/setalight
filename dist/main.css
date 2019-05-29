@@ -1,0 +1,108 @@
+* {
+  margin: 0;
+  padding: 0;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  background-color: #212121;
+  color: #FAFAFA;
+
+}
+
+body {
+  width: 100%;
+}
+
+:root {
+  /*
+  We use vw in order to autoscale text to window width. 3vh seems
+  a reasonable starting point for most songs - we may want to move to
+  dynamically calculating optimal font size per song based on line length in
+  future.
+  */
+  --scale: 3vw;
+}
+
+.song {
+  display: none;
+  font-size: var(--scale);
+  margin-left: 1rem;
+}
+
+.active {
+  display: block;
+}
+
+.song header.title {
+  font-size: 4vw;
+  margin-bottom: 0.5em;
+}
+
+.song header.title span.info {
+  float: right;
+  font-size: 3vw;
+  margin: 0.3em;
+}
+
+.song section {
+  margin-bottom: var(--scale);
+}
+
+/* section headers */
+.song section header .name {
+  font-style: italic;
+  text-transform: uppercase;
+}
+.song section header .toggle   { color: #EEE; }
+.song section header .expand.toggle   { display: none; }
+.song section header .collapse.toggle { display: inline; }
+.song section header .show-chords.toggle { font-size: 80%; }
+
+
+/* collapse section styles */
+.song section.collapsed p { display: none; }
+.song section.collapsed header .expand.toggle   { display: inline; }
+.song section.collapsed header .collapse.toggle { display: none; }
+.song section.collapsed header .show-chords.toggle { display: none; }
+
+/* hide chords styles */
+.song section.hide-chords header .show-chords {
+  text-decoration: line-through;
+  color: #BBB;
+}
+.song section.hide-chords .chord { display: none; }
+.song section.hide-chords p.line.chords { display: none; }
+.song section.hide-chords p.line {
+  margin-top: 0;
+  white-space: normal;
+}
+
+/* chord/lyric line display */
+.song section p.both {
+  position: relative;
+  margin-top: var(--scale);
+  white-space: pre;
+}
+
+.song section p.chords { white-space: pre; }
+
+.song section p .chord {
+  font-weight: bold;
+  font-size: 90%;
+  color: #FFF;
+}
+
+.song section p .comment {
+  font-size: 90%;
+  font-style: italic;
+}
+
+.song section p .inword {
+  /* position: absolute lets the text flow underneath the chord */
+  position: absolute;
+  bottom: var(--scale);
+}
+
+.song section p .inspace {
+  /* position: relatve preserves the space left by the chord */
+  position: relative;
+  bottom: var(--scale);
+}
