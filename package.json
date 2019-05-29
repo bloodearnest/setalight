@@ -1,0 +1,32 @@
+{
+  "name": "setalight",
+  "version": "1.0.0",
+  "description": "A tool for building a musical setlist webapp",
+  "main": "src/js/main.js",
+  "private": true,
+  "directories": {
+    "example": "src"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "standard --fix src/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bloodearnest/setalight.git"
+  },
+  "author": "Simon Davy <bloodearnest@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/bloodearnest/setalight/issues"
+  },
+  "homepage": "https://github.com/bloodearnest/setalight#readme",
+  "devDependencies": {
+    "standard": "^12.0.1",
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2"
+  },
+  "dependencies": {
+    "preact": "^10.0.0-beta.1"
+  }
+}
