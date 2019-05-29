@@ -187,10 +187,7 @@ def chordpro_line(chord_line, lyric_line):
                     last_char = char
                 i, char = next(line_iter)
 
-        chordpro = ''.join(output)
-        # max of 5 spaces
-        cleaned = re.sub(r'    +', '    ', chordpro)
-        return cleaned.strip()
+        return ''.join(output).strip()
 
 
 def fix_superscript_line(superscript, chords):
@@ -327,9 +324,11 @@ def parse_pdf(path, debug):
 
     # convert into chordpro
     for name, section_lines in song['sections'].items():
-        song['sections'][name] = '\n'.join(
+        chordpro_section = '\n'.join(
             chordpro_line(c, l) for c, l in section_lines
         )
+        # max of 4 spaces
+        song['sections'][name] = re.sub(r'    +', '    ', chordpro_section)
 
     if not song['sections']:
         song['type'] = 'pdf-failed'

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>TITLE</title>
     <script id="songdata" type="application/json">
-      SONGDATA
+SONGDATA
     </script>
     <style>
 * {
@@ -22,6 +22,12 @@ body {
 }
 
 :root {
+  /*
+  We use vw in order to autoscale text to window width. 3vh seems
+  a reasonable starting point for most songs - we may want to move to
+  dynamically calculating optimal font size per song based on line length in
+  future.
+  */
   --scale: 3vw;
 }
 
@@ -33,6 +39,17 @@ body {
 
 .active {
   display: block;
+}
+
+.song header.title {
+  font-size: 4vw;
+  margin-bottom: 0.5em;
+}
+
+.song header.title span.info {
+  float: right;
+  font-size: 3vw;
+  margin: 0.3em;
 }
 
 .song section {
@@ -70,14 +87,20 @@ body {
 .song section p.both {
   position: relative;
   margin-top: var(--scale);
+  white-space: pre;
 }
 
 .song section p.chords { white-space: pre; }
 
 .song section p .chord {
   font-weight: bold;
-  font-family: Arial, Helvetica, sans-serif;
+  font-size: 90%;
   color: #FFF;
+}
+
+.song section p .comment {
+  font-size: 90%;
+  font-style: italic;
 }
 
 .song section p .inword {
