@@ -1,6 +1,6 @@
 import { h, render, Fragment } from 'preact'
-import { useState, useEffect, useRef, useCallback } from 'preact/hooks'
-import { useEventListener } from './hooks'
+import { useState, useCallback } from 'preact/hooks'
+import { useEventListener, useSwipe } from './hooks'
 
 const SONGDATA = JSON.parse(document.getElementById('songdata').innerHTML)
 const KEY = {
@@ -34,29 +34,30 @@ function load (orig) {
 function SetList ({ songs }) {
   const [active, setActive] = useState(0)
 
-  const keydown = useCallback(ev => {
-    switch (ev.which) {
-      case KEY.RIGHT:
-        if (active < songs.length - 1) { setActive(active + 1) }
-        ev.preventDefault()
-        break
-      case KEY.LEFT:
-        if (active > 0) { setActive(active - 1) }
-        ev.preventDefault()
-        break
-      default:
-        break
-    }
-  },
-  [active, setActive]
+  const switchSong = useCallback(
+    (direction) => {
+      var handled = true
+      switch (direction) {
+        case 'right':
+        case KEY.RIGHT:
+          setActive(Math.min(active + 1, songs.length - 1))
+          break
+        case 'left':
+        case KEY.LEFT:
+          setActive(Math.max(0, active - 1))
+          break
+        default:
+          handled = false
+      }
+      return handled
+    },
+    [active, setActive]
   )
 
-  useEventListener('keydown', keydown)
+  const keydown = ev => { switchSong(ev.which) && ev.preventDefault() }
 
-  // useEffect(() => {
-  //  window.addEventListener('keydown', keydown)
-  //  return () => window.removeEventListener('keydown', keydown)
-  // })
+  useEventListener('keydown', keydown)
+  useSwipe(switchSong, window)
 
   return (
     <Fragment>
