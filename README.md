@@ -35,3 +35,16 @@ Some technical goals:
 2. Offline use
 
 3. Minimal backend, ideally serverless
+
+
+# Usage
+
+To build the js/css intro the dist/index.html template:
+
+    make dist/index.html
+
+To build a setlist from a directory of pdfs
+
+    ./setalight <dir>
+
+This will output setlist.html

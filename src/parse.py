@@ -17,7 +17,10 @@ class RE:
         bridge|
         pre-chorus|
         instrumental|
-        interlude
+        interlude|
+        turnaround|
+        ending|
+        coda
     )""", re.I | re.VERBOSE)
     # this sucker is a beauty
     CHORD = re.compile(r"""
@@ -327,8 +330,8 @@ def parse_pdf(path, debug):
         chordpro_section = '\n'.join(
             chordpro_line(c, l) for c, l in section_lines
         )
-        # max of 4 spaces
-        song['sections'][name] = re.sub(r'    +', '    ', chordpro_section)
+        # max of 3 spaces
+        song['sections'][name] = re.sub(r'   +', '   ', chordpro_section)
 
     if not song['sections']:
         song['type'] = 'pdf-failed'
