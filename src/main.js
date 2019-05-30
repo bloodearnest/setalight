@@ -54,23 +54,23 @@ function SetList ({ songs }) {
     [active, setActive]
   )
 
-  const keydown = ev => { switchSong(ev.which) && ev.preventDefault() }
-
-  useEventListener('keydown', keydown)
+  useEventListener('keydown', ev => { switchSong(ev.which) && ev.preventDefault() })
   useSwipe(switchSong, window)
 
   return (
     <Fragment>
-      { songs.map((song, i) => <Song song={song} display={active === i} />) }
+      { songs.map((song, i) => <Song song={song} index={i} active={active} />) }
     </Fragment>
   )
 }
 
-function Song ({ song, display }) {
+function Song ({ song, index, active }) {
   return (
-    <article className={'song ' + (display ? 'active' : '')}>
-      <SongTitle song={song} />
-      {map(song.sections, (name, section) => <Section name={name} section={section} />)}
+    <article class="song" style={{ transform: 'translateX(' + active * -window.innerWidth + 'px)' }}>
+      <div class="spacer">
+        <SongTitle song={song} />
+        {map(song.sections, (name, section) => <Section name={name} section={section} />)}
+      </div>
     </article>
   )
 }
@@ -95,10 +95,10 @@ function Section ({ name, section }) {
   return (
     <section className={_class}>
       <header>
-        <span class='name toggle' onclick={toggleCollapsed}>{name}</span>
-        <span class='collapse toggle' onclick={toggleCollapsed}> ⯅</span>
-        <span class='expand toggle' onclick={toggleCollapsed}> ⯆</span>
-        &nbsp;<span class='show-chords toggle' onclick={toggleChords}>A♭</span>
+        <span class='name toggle' onclick={toggleCollapsed} ontouchend={toggleCollapsed}>{name}</span>
+        <span class='collapse toggle' onclick={toggleCollapsed} ontouchend={toggleCollapsed}> ⯅</span>
+        <span class='expand toggle' onclick={toggleCollapsed} ontouchend={toggleCollapsed}> ⯆</span>
+        &nbsp;<span class='show-chords toggle' onclick={toggleChords} ontouchend={toggleChords}>A♭</span>
       </header>
       {lines.map((l) => <Line line={l} />)}
     </section>

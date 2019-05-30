@@ -1,12 +1,12 @@
 PYDIR = venv
 VENV = $(PYDIR)/.done
 PYBIN = $(PYDIR)/bin
-TEMPLATE ?= dist/index.html
+TEMPLATE ?= index.html
 DIR ?= samples
 
 
-build: $(TEMPLATE) 
-	python3 src/build.py $(DIR) --template=$(TEMPLATE) > dist/setlist.html
+build: dist/$(TEMPLATE) 
+	python3 src/build.py $(DIR) --template=dist/$(TEMPLATE) > dist/setlist.html
 
 dist/inline.html: dist/main.js dist/index.html dist/main.css
 	npx inline-source --compress --root dist dist/index.html > $@

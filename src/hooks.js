@@ -27,13 +27,13 @@ function computeSwipeDirection (gesture, tolerance) {
   const absdy = Math.abs(dy)
 
   if (absdx < tolerance && dy > tolerance) {
-    return 'down'
-  } else if (dy < tolerance && absdx < tolerance && absdy > tolerance) {
     return 'up'
+  } else if (dy < tolerance && absdx < tolerance && absdy > tolerance) {
+    return 'down'
   } else if (dx < tolerance && absdx > tolerance && absdy < tolerance) {
-    return 'left'
-  } else if (dx > tolerance && absdy < tolerance) {
     return 'right'
+  } else if (dx > tolerance && absdy < tolerance) {
+    return 'left'
   }
   return null
 }

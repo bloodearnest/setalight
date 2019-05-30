@@ -17,26 +17,24 @@ parser.add_argument(
 )
 
 
-def build_site(title, text, songs):
-    with open('dist/index.html') as fp:
-        template = fp.read()
+def build_site(title, text, songs, template):
     output = template.replace('SONGDATA', json.dumps(songs, indent=4))
     output = output.replace('TITLE', title)
     print(output)
 
 
-def main(input, output, debug):
+def main(args):
     songs = []
-    if os.path.isdir(input):
-        paths = [os.path.join(input, f) for f in os.listdir(input)]
+    if os.path.isdir(args.dir):
+        paths = [os.path.join(args.dir, f) for f in os.listdir(args.dir)]
     else:
-        paths = [input]
+        paths = [args.dir]
 
     for path in paths:
         if path.endswith('.pdf'):
-            songs.append(parse.parse_pdf(path, debug))
+            songs.append(parse.parse_pdf(path, args.debug))
 
-    if debug:
+    if args.debug:
         for song in songs:
             print(song['title'])
             print(song['key'])
@@ -46,9 +44,11 @@ def main(input, output, debug):
                 print(name)
                 print(section)
     else:
-        build_site('12th May', 'test\ntesting\ntester', songs)
+        with open(args.template) as fp:
+            template = fp.read()
+        build_site('12th May', 'test\ntesting\ntester', songs, template)
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    main(args.dir, args.output, args.debug)
+    main(args)

@@ -9,12 +9,11 @@
 
 body {
   width: 100%;
-  overflow: hidden;
 }
 
 :root {
   /*
-  We use vw in order to autoscale text to window width. 3vh seems
+  We use vw in order to autoscale text to window width. 3vw seems
   a reasonable starting point for most songs - we may want to move to
   dynamically calculating optimal font size per song based on line length in
   future.
@@ -22,24 +21,31 @@ body {
   --scale: 3vw;
 }
 
-.song {
-  display: none;
-  font-size: var(--scale);
-  margin-left: 1rem;
+#setlist {
+  display: flex;
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
 
-.active {
-  display: block;
+.song {
+  font-size: var(--scale);
+  width: 100%;
+  flex: 0 0 100%;
+  transition: all 0.4s ease-in-out;
+}
+
+.song .spacer {
+  margin-left: 1%;
 }
 
 .song header.title {
-  font-size: 4vw;
+  font-size: 130%;
   margin-bottom: 0.5em;
 }
 
 .song header.title span.info {
   float: right;
-  font-size: 3vw;
+  font-size: var(--scale);
   margin: 0.3em;
 }
 
@@ -60,9 +66,11 @@ body {
 
 
 /* collapse section styles */
+.song section.collapsed { margin-bottom: 0; }
 .song section.collapsed p { display: none; }
 .song section.collapsed header .expand.toggle   { display: inline; }
 .song section.collapsed header .collapse.toggle { display: none; }
+.song section.collapsed header .show-chords.toggle { display: none; }
 .song section.collapsed header .show-chords.toggle { display: none; }
 
 /* hide chords styles */
@@ -71,6 +79,7 @@ body {
   color: #BBB;
 }
 .song section.hide-chords .chord { display: none; }
+.song section.hide-chords .comment { display: none; }
 .song section.hide-chords p.line.chords { display: none; }
 .song section.hide-chords p.line {
   margin-top: 0;
