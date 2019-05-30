@@ -273,7 +273,7 @@ def chordpro_line_testcases():
     yield (  # longer chords
         " A    Bm   Cm",
         " word",
-        "[A]word [Bm]    [Cm]",
+        "[A]word [Bm]     [Cm]",
     )
     yield (  # longer words
         " A",

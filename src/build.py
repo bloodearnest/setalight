@@ -8,6 +8,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     'dir', help='file or directory to load from')
 parser.add_argument(
+    '--template', default='dist/index.html', help='template to use')
+parser.add_argument(
     '--output', default=os.getcwd(), help='directory output setlist in')
 parser.add_argument(
     '--debug', '-d', default=False, action='store_true',

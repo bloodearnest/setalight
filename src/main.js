@@ -1,5 +1,6 @@
 import { h, render, Fragment } from 'preact'
-import { useState, useEffect, useRef } from 'preact/hooks'
+import { useState, useEffect, useRef, useCallback } from 'preact/hooks'
+import { useEventListener } from './hooks'
 
 const SONGDATA = JSON.parse(document.getElementById('songdata').innerHTML)
 const KEY = {
@@ -32,27 +33,30 @@ function load (orig) {
 // the main application component
 function SetList ({ songs }) {
   const [active, setActive] = useState(0)
-  const activeRef = useRef(active)
-  const numSongs = Object.keys(songs).length
-  const keypress = (ev) => {
-    if (ev.which === KEY.RIGHT) {
-      if (activeRef.current < numSongs - 1) {
-        activeRef.current += 1
-        setActive(activeRef.current)
-      }
-      ev.preventDefault()
-    } else if (ev.which === KEY.LEFT) {
-      if (activeRef.current > 0) {
-        activeRef.current -= 1
-        setActive(activeRef.current)
-      }
-      ev.preventDefault()
+
+  const keydown = useCallback(ev => {
+    switch (ev.which) {
+      case KEY.RIGHT:
+        if (active < songs.length - 1) { setActive(active + 1) }
+        ev.preventDefault()
+        break
+      case KEY.LEFT:
+        if (active > 0) { setActive(active - 1) }
+        ev.preventDefault()
+        break
+      default:
+        break
     }
-  }
-  useEffect(() => {
-    window.addEventListener('keydown', keypress)
-    return () => window.removeEventListener('keydown', keypress)
-  }, [active])
+  },
+  [active, setActive]
+  )
+
+  useEventListener('keydown', keydown)
+
+  // useEffect(() => {
+  //  window.addEventListener('keydown', keydown)
+  //  return () => window.removeEventListener('keydown', keydown)
+  // })
 
   return (
     <Fragment>

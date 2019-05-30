@@ -1,25 +1,35 @@
 PYDIR = venv
 VENV = $(PYDIR)/.done
 PYBIN = $(PYDIR)/bin
+TEMPLATE ?= dist/index.html
+DIR ?= samples
 
-.PHONY: build
-build: 
-	$(MAKE) dist/index.html
-	python3 src/build.py $(DIR) > setlist.html
 
-dist/index.html: dist/main.js src/index.html dist/main.css
-	npx inline-source --compress --root dist src/index.html > dist/index.html
+build: $(TEMPLATE) 
+	python3 src/build.py $(DIR) --template=$(TEMPLATE) > dist/setlist.html
 
-dist/main.js: src/main.js webpack.config.js package.json
+dist/inline.html: dist/main.js dist/index.html dist/main.css
+	npx inline-source --compress --root dist dist/index.html > $@
+
+dist/index.html: dist/main.js
+
+dist/main.js: src/*.js webpack.config.js package.json
 	npx webpack
 
-dependencies:
-	sudo apt install -y python3 poppler-utils virtualenv
+clean:
+	rm -f dist/main.js dist/inline.html
+
+full-clean: clean
+	rm -rf venv node_modules
+
+.PHONY: test
+test: $(VENV)
+	PYTHONPATH=src/ $(PYBIN)/pytest tests/
 
 $(VENV): Makefile requirements.txt
 	virtualenv -p python3 venv
 	$(PYBIN)/pip install -r requirements.txt
 	touch venv/.done
 
-test: $(VENV)
-	PYTHONPATH=src/ $(PYBIN)/pytest tests/
+system-dependencies:
+	sudo apt install -y python3 poppler-utils virtualenv

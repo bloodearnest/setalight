@@ -1,6 +1,6 @@
 node_modules
 __pycache__
 venv
-dist/index.html
 dist/main.js
-setlist.html
+dist/setlist.html
+dist/inline.html
