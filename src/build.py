@@ -38,6 +38,7 @@ def main(args):
         for song in songs:
             print(song['title'])
             print(song['key'])
+            print(song['time'])
             print(song['tempo'])
             print(song['ccli'])
             for name, section in song['sections'].items():

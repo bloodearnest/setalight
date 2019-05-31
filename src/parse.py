@@ -328,6 +328,13 @@ def parse_pdf(path, debug):
         song['sections'][section_name] = section_lines
 
     if debug:
+        print(song['title'])
+        print(song['title'])
+        print(song['key'])
+        print(song['time'])
+        print(song['tempo'])
+        print(song['ccli'])
+
         for name, section in song['sections'].items():
             print(name)
             for c, l in section:
