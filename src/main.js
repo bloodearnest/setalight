@@ -77,11 +77,18 @@ function Song ({ song, index, active }) {
 }
 
 function SongTitle ({ song }) {
-  const keys = ['key', 'time', 'tempo']
-  const parts = keys.map((k) => song[k]).filter(Boolean)
+  var nodes = []
+  var key = song.key ? song.key : ''
+  if (song.capo) {
+    key += ' Capo ' + song.capo
+  }
+  nodes.push(key)
+  if (song.time) nodes.push(song.time)
+  if (song.tempo) nodes.push(song.tempo)
+
   return (
     <header class='title'>{ song['title'] }
-      <span class='info'>{ parts.join(' | ') }</span>
+      <span class='info'>{ nodes.join(' | ') }</span>
     </header>
   )
 }

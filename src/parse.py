@@ -5,13 +5,20 @@ import re
 import subprocess
 import tempfile
 
+# from PyPDF2 import PdfFileReader
+
 
 class RE:
 
-    KEY = re.compile(r'key\s+[-:]\s+([A-G][#b]?)', re.I)
+    PAGE = re.compile(r'Page ?[A-Za-z0-9]+')
+    KEY = re.compile(
+        r'Key\s+(?:[-:]|of)\s+(?P<key>[A-G][♯♭#b]?)\s*(?:Capo (?P<capo>\d+))?',
+        re.I,
+    )
     TIME = re.compile(r'time\s+[-:]\s+(\d+/\d+)', re.I)
     TEMPO = re.compile(r'tempo\s+[-:]\s+(\d+)', re.I)
-    SECTION = re.compile(r"""(
+    SECTION = re.compile(r"""^(
+        intro|
         verse|
         chorus|
         bridge|
@@ -20,7 +27,8 @@ class RE:
         interlude|
         turnaround|
         ending|
-        coda
+        coda|
+        outro
     )""", re.I | re.VERBOSE)
     # this sucker is a beauty
     CHORD = re.compile(r"""
@@ -44,6 +52,19 @@ class RE:
         (\|)|                # bar lines, keep
         [ ]+               # spaces, discard
     """, re.VERBOSE)
+
+
+# def get_pdf_type(path):
+#    with open(path, 'rb') as f:
+#        pdf = PdfFileReader(f)
+#        creator = pdf.documentInfo['/Creator'].lower()
+#
+#    if 'onsong' in creator:
+#        return 'onsong'
+#    elif 'pdfsharp' in creator:
+#        return 'pdfsharp'
+#    else:
+#        return None
 
 
 def convert_pdf(path):
@@ -233,6 +254,38 @@ def fix_superscript_line(superscript, chords):
     return ''.join(out)
 
 
+def parse_header(header):
+    # first line has 'Key - X' or 'Key of X'
+    key = RE.KEY.search(header[0])
+    if key:
+        groupdict = key.groupdict()
+        yield 'key', groupdict.get('key')
+        yield 'capo', groupdict.get('capo')
+        position = key.span()[0]
+        yield 'title', header[0][:position].strip()
+    else:
+        yield 'title', header[0].strip()
+
+    # is there a second header line?
+    if len(header) > 1:
+        time = RE.TIME.search(header[1])
+        pos = len(header[1])
+        if time:
+            if time:
+                yield 'time', time.groups()[0]
+                pos = min(pos, time.span()[0])
+
+        tempo = RE.TEMPO.search(header[1])
+        if tempo:
+            if tempo:
+                yield 'tempo', tempo.groups()[0]
+                pos = min(pos, tempo.span()[0])
+        yield 'author', header[1][:pos].strip()
+
+    if len(header) > 2:
+        yield 'blurb', '\n'.join(header[2:])
+
+
 def parse_pdf(path, debug):
     """Parse a pdf intro plain text.
 
@@ -244,50 +297,76 @@ def parse_pdf(path, debug):
     """
 
     sheet = convert_pdf(path)
+    if debug:
+        print(sheet)
 
     song = {
         'title': None,
         'key': None,
+        'capo': None,
         'tempo': None,
         'author': None,
         'time': None,
         'ccli': None,
+        'blurb': None,
         'legal': '',
         'sections': OrderedDict(),
         'type': 'pdf',
     }
 
-    lines = [l for l in sheet.split('\n') if l.strip()]
-    section_name = None
+    sheet_lines = sheet.split('\n')
+    # skip any leading blank lines
+    for i, line in enumerate(sheet_lines):
+        if line.strip():
+            break
+
+    lines = sheet_lines[i:]
+
+    if RE.SECTION.search(lines[0]) or is_chord_line(tokenise_chords(lines[0])):
+        line_iter = iter(lines)
+    else:  # must be some kind of title block
+        header = []
+        for i, line in enumerate(lines[:6]):
+            if line.strip():
+                header.append(line)
+            else:
+                # found the end of the header
+                song.update(dict(parse_header(header)))
+                line_iter = iter(lines[i:])
+                break
+        else:
+            # no discernable header ended by blank line
+            line_iter = iter(lines)
+
+    # default name
+    section_name = 'VERSE 1'
     section_lines = []
     chord_line = None
     superscript_line = None
+    # set a default first section name, in case it's missing
 
-    for line in lines:
-
-        # assumes everything after a ccli number is blurb
-        if song['ccli']:
-            song['legal'] += line
+    # import pdb; pdb.set_trace()
+    for line in line_iter:
+        if not line.strip():  # skip blank lines
             continue
-        else:
-            ccli = RE.CCLI.search(line)
-            if ccli:
-                song['ccli'] = ccli.groups()[0]
-                song['legal'] += line
-                continue
+        ccli = RE.CCLI.search(line)
+        if ccli:
+            break
+        if RE.PAGE.search(line.strip()):
+            continue
 
         tokens = tokenise_chords(line)
-        if RE.SECTION.match(line):
-            if section_name:
-                if chord_line:
-                    section_lines.append((chord_line, None))
+        if RE.SECTION.search(line):
+            if chord_line:
+                section_lines.append((chord_line, None))
+            if section_lines:
                 song['sections'][section_name] = section_lines
             chord_line = None
             section_name = line.strip()
             section_lines = []
         elif is_chord_line(tokens):
-            if not section_name:
-                section_name = 'VERSE 1'
+            if chord_line is not None:
+                section_lines.append((chord_line, None))
             if superscript_line is not None:
                 chord_line = fix_superscript_line(
                     superscript_line,
@@ -296,7 +375,7 @@ def parse_pdf(path, debug):
                 superscript_line = None
             else:
                 chord_line = line.rstrip()
-        elif section_name:
+        else:
             # handle case where superscript chord markings get pushed onto
             # their own line above by pdftotext
             if line.strip().isdigit():
@@ -304,36 +383,28 @@ def parse_pdf(path, debug):
             else:
                 section_lines.append((chord_line, line.rstrip()))
                 chord_line = None
-        else:
-            # preamble
-            match = RE.KEY.search(line)
-            if match:
-                song['key'] = match.groups()[0]
-                song['title'] = line[:match.span()[0]].strip()
-                continue
 
-            match = RE.TIME.search(line)
-            if match:
-                song['time'] = match.groups()[0]
-                span = match.span()
-                tempo_match = RE.TEMPO.search(line)
-                if tempo_match:
-                    song['tempo'] = tempo_match.groups()[0]
-                    span = tempo_match.span()
-                song['author'] = line[:span[0]].strip()
-
-    if section_name:
-        if chord_line:
-            section_lines.append((chord_line, None))
+    # handle dangling chord line
+    if chord_line:
+        section_lines.append((chord_line, None))
+    # finish final section
+    if section_lines:
         song['sections'][section_name] = section_lines
 
+    # did we reached the CCLI number
+    if ccli is not None:
+        song['ccli'] = ccli.groups()[0]
+        song['legal'] += line.strip() + '\n'.join(l.strip() for l in line_iter)
+
     if debug:
-        print(song['title'])
-        print(song['title'])
-        print(song['key'])
-        print(song['time'])
-        print(song['tempo'])
-        print(song['ccli'])
+        print('title', song['title'])
+        print('author', song['author'])
+        print('blurb', song['blurb'])
+        print('key', song['key'])
+        print('capo', song['capo'])
+        print('time', song['time'])
+        print('tempo', song['tempo'])
+        print('ccli', song['ccli'])
 
         for name, section in song['sections'].items():
             print(name)
