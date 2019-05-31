@@ -73,15 +73,15 @@ body {
 /* collapse section styles */
 .song section.collapsed { margin-bottom: 0; }
 .song section.collapsed p { display: none; }
+.song section.collapsed header span.toggle { color: #999; }
 .song section.collapsed header .expand.toggle   { display: inline; }
 .song section.collapsed header .collapse.toggle { display: none; }
-.song section.collapsed header .show-chords.toggle { display: none; }
 .song section.collapsed header .show-chords.toggle { display: none; }
 
 /* hide chords styles */
 .song section.hide-chords header .show-chords {
   text-decoration: line-through;
-  color: #BBB;
+  color: #999;
 }
 .song section.hide-chords .chord { display: none; }
 .song section.hide-chords .comment { display: none; }
