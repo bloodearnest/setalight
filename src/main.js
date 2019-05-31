@@ -59,8 +59,24 @@ function SetList ({ songs }) {
 
   return (
     <Fragment>
+      <Index songs={songs} active={active}/>
       { songs.map((song, i) => <Song song={song} index={i} active={active} />) }
     </Fragment>
+  )
+}
+
+function Index({ songs, active }) {
+  const x = active * -(window.innerWidth)
+  return (
+    <div class="container" style={{ transform: 'translateX(' + x + 'px)' }}>
+      <article class="index">
+        <header>Date goes Here</header>
+        <header>Leader goes here</header>
+        <ul>
+          {songs.map((s, i) => <li>{s.title} | {s.key}</li>)}
+        </ul>
+      </article>
+    </div>
   )
 }
 

@@ -29,6 +29,10 @@ def main(args):
         paths = [os.path.join(args.dir, f) for f in os.listdir(args.dir)]
     else:
         paths = [args.dir]
+    paths.sort()
+
+    if args.debug:
+        print(paths)
 
     for path in paths:
         if path.endswith('.pdf'):

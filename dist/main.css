@@ -36,11 +36,18 @@ body {
   alignt-self: baseline;
 }
 
-.song {
+.song, .index {
   padding-left: 0.5vw;
   width: 99.5vw;
   font-size: var(--scale);
   overflow-x: hidden
+}
+
+.index header {
+  margin-bottom: 1em;
+}
+.index li {
+  padding-left: 1em;
 }
 
 .song header.title {
