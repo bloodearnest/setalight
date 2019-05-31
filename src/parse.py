@@ -47,19 +47,25 @@ class RE:
 
 
 def convert_pdf(path):
-    """Converts a pdf file to text."""
+    """Converts a pdf file to text.
+
+    Deals with various common conversion errors."""
     cmd = ['pdftotext', '-layout', '-enc', 'UTF-8', '-eol', 'unix', '-nopgbrk']
     try:
         _, output = tempfile.mkstemp()
         subprocess.run(cmd + [path, output])
         with open(output, 'r') as f:
             contents = f.read()
-        # Some pdf's have zero-width spaces in them
-        # TODO: we probably enforce ASCII, stripping unicode?
-        contents = contents.replace(u"\u200B", '')
-        return contents
     finally:
         os.unlink(output)
+
+    # fix various issues
+    # Some pdf's have zero-width spaces in them
+    # TODO: we probably enforce ASCII, stripping unicode?
+    contents = contents.replace(u"\u200B", '')
+    # sometimes a chord like D(4) is extracted as D(4 which is hard to parse
+    contents = re.sub(r'([A-JZ]\([\d])([ $])', r'\1)\2', contents)
+    return contents
 
 
 def tokenise_chords(chord_line):
@@ -190,7 +196,10 @@ def chordpro_line(chord_line, lyric_line):
                     last_char = char
                 i, char = next(line_iter)
 
-        return ''.join(output).strip()
+        # condense spaces
+        chordpro = ''.join(output).strip()
+        condensed = re.sub('  +', ' ', chordpro)
+        return condensed
 
 
 def fix_superscript_line(superscript, chords):

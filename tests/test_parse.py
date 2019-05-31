@@ -237,7 +237,7 @@ def test_chord_regex_not_match(input):
     ('| Abm7', ['|', 'Abm7']),
     ('Abm7|',  ['Abm7', '|']),
     ('|Abm7',  ['|', 'Abm7']),
-    ('A D(4) (To Pre-Chorus 1)', ['A', 'D(4)', '(To Pre-Chorus 1)'])
+    ('A D(4) (To Pre-Chorus 1)', ['A', 'D(4)', '(To Pre-Chorus 1)']),
 ])
 def test_tokenise_chords(input, tokens):
     assert parse.tokenise_chords(input) == tokens
@@ -273,7 +273,7 @@ def chordpro_line_testcases():
     yield (  # longer chords
         " A    Bm   Cm",
         " word",
-        "[A]word [Bm]     [Cm]",
+        "[A]word [Bm] [Cm]",
     )
     yield (  # longer words
         " A",
@@ -323,7 +323,7 @@ def chordpro_line_testcases():
     yield (  # splits chords next to | and inserts spaces before chords
         "|C#m7 B|E  F#|  C#m7",
         "               Word",
-        "[|] [C#m7] [B] [|] [E]  [F#] [|] W[C#m7]ord",
+        "[|] [C#m7] [B] [|] [E] [F#] [|] W[C#m7]ord",
     )
 
 

@@ -65,13 +65,14 @@ function SetList ({ songs }) {
 }
 
 function Song ({ song, index, active }) {
+  const x = active * -(window.innerWidth)
   return (
-    <article class="song" style={{ transform: 'translateX(' + active * -window.innerWidth + 'px)' }}>
-      <div class="spacer">
+    <div class="container" style={{ transform: 'translateX(' + x + 'px)' }}>
+      <article class="song">
         <SongTitle song={song} />
         {map(song.sections, (name, section) => <Section name={name} section={section} />)}
-      </div>
-    </article>
+      </article>
+    </div>
   )
 }
 
