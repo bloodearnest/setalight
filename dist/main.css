@@ -90,27 +90,30 @@ body {
   text-decoration: line-through;
   color: #999;
 }
-.song section.hide-chords .chord { display: none; }
-.song section.hide-chords .comment { display: none; }
-.song section.hide-chords p.line.chords { display: none; }
+.song section.hide-chords .chord,
+.song section.hide-chords .comment,
+.song section.hide-chords .spaced-chord,
+.song section.hide-chords .hyphen {
+   display: none;
+}
 .song section.hide-chords p.line {
   margin-top: 0;
-  white-space: normal;
 }
+.song section.hide-chords p.line.chords { display: none; }
 
 /* chord/lyric line display */
 .song section p.both {
   position: relative;
-  margin-top: var(--scale);
   white-space: pre;
 }
 
-.song section p.chords { white-space: pre; }
+.song .section p.line span { display: inline-block; }
 
 .song section p .chord {
   font-weight: bold;
   font-size: 80%;
   color: #FFF;
+  padding-right: 0.6em;
 }
 
 .song section p .comment {
@@ -118,14 +121,19 @@ body {
   font-style: italic;
 }
 
-.song section p .inword {
-  /* position: absolute lets the text flow underneath the chord */
+.song section p .chordlyric {
+  display: inline-block;
+  position: relative;
+  vertical-align: bottom;
+}
+
+.song section p .chordlyric span.chord { float: left }
+.song section p .chordlyric span.comment { float: left }
+.song section p .chordlyric span.lyric { float: left; clear: both }
+
+/*
+.song section p .chordlyric .chord {
   position: absolute;
   bottom: var(--scale);
 }
-
-.song section p .inspace {
-  /* position: relatve preserves the space left by the chord */
-  position: relative;
-  bottom: var(--scale);
-}
+*/

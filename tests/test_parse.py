@@ -269,7 +269,7 @@ def test_is_chord_line(input, is_chords):
 
 def chordpro_line_testcases():
     yield None, "lyric", "lyric"
-    yield "chord", None, "chord"
+    yield "chord", None, "[chord]"
     yield (  # longer chords
         " A    Bm   Cm",
         " word",

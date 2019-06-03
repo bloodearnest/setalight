@@ -188,58 +188,70 @@ def chordpro_line(chord_line, lyric_line):
     if not chord_line:
         return lyric_line
     elif not lyric_line:
-        # chords not wrapped in []
-        return chord_line
-    else:
-        chord_iter = itertools.chain(
-            chord_indicies(chord_line),
-            itertools.repeat((-1, None)),
-        )
-        line_iter = enumerate(
-            itertools.chain(
-                lyric_line,
-                itertools.repeat(None),
-            ),
-        )
+        tokens = re.split(r'( +)|(:?\|\|:?)|(\|)', chord_line)
         output = []
-
-        index, chord = next(chord_iter)
-        i, char = next(line_iter)
-        last_char = None
-        while chord or char:
-            if i == index:
-                if chord.startswith('(') and chord.endswith(')'):
-                    output.append('{comment:' + chord + '}')
-                else:
-                    if output and output[-1][-1] == ']':
-                        # ensure a space between chords
-                        output.append(' ')
-                    elif char == ' ' and last_char != ' ':
-                        # ensure there is a space in the lyric line to 'attach'
-                        # to
-                        output.append(' ')
-                    output.append('[' + chord + ']')
-                # skip up to the chord's length of spaces in the lyric line
-                skipped = 0
-                while char == ' ' and skipped < len(chord):
-                    last_char = char
-                    i, char = next(line_iter)
-                    skipped += 1
-
-                index, chord = next(chord_iter)
+        for token in tokens:
+            if token is None:
+                continue
+            if token.strip():
+                output.append('[' + token + ']')
             else:
-                if char is None:
-                    output.append(' ')
-                    last_char = ' '
-                else:
-                    output.append(char)
-                    last_char = char
-                i, char = next(line_iter)
+                output.append(token)
+        return ''.join(output)
+    else:
+        return chord_and_lyrics(chord_line, lyric_line)
 
-        # condense spaces
-        chordpro = ''.join(output).strip()
-        condensed = re.sub('  +', ' ', chordpro)
-        return condensed
+
+def chord_and_lyrics(chord_line, lyric_line):
+    chord_iter = itertools.chain(
+        chord_indicies(chord_line),
+        itertools.repeat((-1, None)),
+    )
+    line_iter = enumerate(
+        itertools.chain(
+            lyric_line,
+            itertools.repeat(None),
+        ),
+    )
+    output = []
+
+    index, chord = next(chord_iter)
+    i, char = next(line_iter)
+    last_char = None
+    while chord or char:
+        if i == index:
+            if chord.startswith('(') and chord.endswith(')'):
+                output.append('{comment:' + chord + '}')
+            else:
+                if output and output[-1][-1] == ']':
+                    # ensure a space between chords
+                    output.append(' ')
+                elif char == ' ' and last_char != ' ':
+                    # ensure there is a space in the lyric line to 'attach'
+                    # to
+                    output.append(' ')
+                output.append('[' + chord + ']')
+            # skip up to the chord's length of spaces in the lyric line
+            skipped = 0
+            while char == ' ' and skipped < len(chord):
+                last_char = char
+                i, char = next(line_iter)
+                skipped += 1
+
+            index, chord = next(chord_iter)
+        else:
+            if char is None:
+                output.append(' ')
+                last_char = ' '
+            else:
+                output.append(char)
+                last_char = char
+            i, char = next(line_iter)
+
+    # condense spaces
+    chordpro = ''.join(output).strip()
+    condensed = re.sub('  +', ' ', chordpro)
+    return condensed
 
 
 def fix_superscript_line(superscript, chords):
@@ -503,7 +515,7 @@ def parse_onsong(path):
                     song[meta] += ' ' + value
                 else:
                     song[meta] = value
-            #else:
+            # else:
             #    print('skipping unknown directive {}'.format(line))
 
         elif search(RE.KEY, line):
