@@ -5,6 +5,8 @@ import re
 import subprocess
 import tempfile
 
+import chardet
+
 # from PyPDF2 import PdfFileReader
 
 
@@ -12,7 +14,8 @@ class RE:
 
     PAGE = re.compile(r'Page ?[A-Za-z0-9]+')
     KEY = re.compile(
-        r'Key\s+(?:[-:]|of)\s+(?P<key>[A-G][♯♭#b]?)\s*(?:Capo (?P<capo>\d+))?',
+        r'key\s*(?:[-:]|of)\s+\[?(?P<key>[A-G][♯♭#b]?)\]?'
+        r'\s*(?:Capo (?P<capo>\d+))?',
         re.I,
     )
     TIME = re.compile(r'time\s+[-:]\s+(\d+/\d+)', re.I)
@@ -53,6 +56,16 @@ class RE:
         [ ]+               # spaces, discard
     """, re.VERBOSE)
 
+    # CHORDPRO directive
+    DIRECTIVE = re.compile(r'{(?P<directive>\w+):(?P<value>.*)}')
+
+
+def search(regex, text):
+    """Helper for regex searching."""
+    match = regex.search(text)
+    search.match = match
+    return match
+
 
 # def get_pdf_type(path):
 #    with open(path, 'rb') as f:
@@ -65,6 +78,13 @@ class RE:
 #        return 'pdfsharp'
 #    else:
 #        return None
+
+
+def clean_encoding(contents):
+    contents = contents.replace('\u200B', '')  # no zero-width spaces
+    contents = contents.replace('\t', ' ')  # no tabs
+    contents = contents.replace('\x85', ' ')   # no weird new lines
+    return contents
 
 
 def convert_pdf(path):
@@ -81,9 +101,8 @@ def convert_pdf(path):
         os.unlink(output)
 
     # fix various issues
-    # Some pdf's have zero-width spaces in them
+    contents = clean_encoding(contents)
     # TODO: we probably enforce ASCII, stripping unicode?
-    contents = contents.replace(u"\u200B", '')
     # sometimes a chord like D(4) is extracted as D(4 which is hard to parse
     contents = re.sub(r'([A-JZ]\([\d])([ $])', r'\1)\2', contents)
     return contents
@@ -300,19 +319,8 @@ def parse_pdf(path, debug):
     if debug:
         print(sheet)
 
-    song = {
-        'title': None,
-        'key': None,
-        'capo': None,
-        'tempo': None,
-        'author': None,
-        'time': None,
-        'ccli': None,
-        'blurb': None,
-        'legal': '',
-        'sections': OrderedDict(),
-        'type': 'pdf',
-    }
+    song = new_song()
+    song['type'] = 'pdf'
 
     sheet_lines = sheet.split('\n')
     # skip any leading blank lines
@@ -345,7 +353,6 @@ def parse_pdf(path, debug):
     superscript_line = None
     # set a default first section name, in case it's missing
 
-    # import pdb; pdb.set_trace()
     for line in line_iter:
         if not line.strip():  # skip blank lines
             continue
@@ -396,31 +403,148 @@ def parse_pdf(path, debug):
         song['ccli'] = ccli.groups()[0]
         song['legal'] += line.strip() + '\n'.join(l.strip() for l in line_iter)
 
-    if debug:
-        print('title', song['title'])
-        print('author', song['author'])
-        print('blurb', song['blurb'])
-        print('key', song['key'])
-        print('capo', song['capo'])
-        print('time', song['time'])
-        print('tempo', song['tempo'])
-        print('ccli', song['ccli'])
-
-        for name, section in song['sections'].items():
-            print(name)
-            for c, l in section:
-                print(c)
-                print(l)
-
     # convert into chordpro
     for name, section_lines in song['sections'].items():
-        chordpro_section = '\n'.join(
+        song['sections'][name] = '\n'.join(
             chordpro_line(c, l) for c, l in section_lines
         )
-        # max of 3 spaces
-        song['sections'][name] = re.sub(r'   +', '   ', chordpro_section)
+
+    if debug:
+        print_song(song)
 
     if not song['sections']:
         song['type'] = 'pdf-failed'
+
+    return song
+
+
+def new_song():
+    song = {
+        'title': None,
+        'key': None,
+        'capo': None,
+        'tempo': None,
+        'author': None,
+        'time': None,
+        'ccli': None,
+        'blurb': '',
+        'legal': '',
+        'sections': OrderedDict(),
+        'type': None,
+    }
+    return song
+
+
+def print_song(song):
+    print('title', song['title'])
+    print('author', song['author'])
+    print('blurb', song['blurb'])
+    print('key', song['key'])
+    print('capo', song['capo'])
+    print('time', song['time'])
+    print('tempo', song['tempo'])
+    print('ccli', song['ccli'])
+
+    for name, section in song['sections'].items():
+        print(name)
+        print(section)
+
+
+META = {
+    'title': 'title',
+    't': 'title',
+    # subtitle (short: st),
+    'artist': 'author',
+    'composer': 'author',
+    # lyricist
+    'copyright': 'legal',
+    # album
+    # year
+    'key': 'key',
+    'time': 'time',
+    'tempo': 'tempo',
+    # duration
+    'capo': 'capo',
+    # meta
+}
+
+
+def parse_onsong(path):
+    with open(path, 'rb') as f:
+        raw = f.read()
+    meta = chardet.detect(raw)
+    encoding = meta['encoding']
+    if 'UTF-16' in encoding:
+        encoding = 'UTF-16'  # this encoding strips any BOM
+    text = clean_encoding(raw.decode(encoding))
+
+    song = new_song()
+    song['type'] = 'onsong'
+
+    verse_counter = 1
+    section = None
+    section_lines = []
+
+    line_iter = iter(text.split('\n'))
+
+    # parse header
+    for line in line_iter:
+        # try detect if there is no header
+        if RE.SECTION.search(line):
+            section = line.strip()
+            break
+
+        if search(RE.DIRECTIVE, line):
+            meta = META.get(search.match.group('directive'))
+            if meta:
+                current = song[meta]
+                value = search.match.group('value')
+                if current:
+                    song[meta] += ' ' + value
+                else:
+                    song[meta] = value
+            #else:
+            #    print('skipping unknown directive {}'.format(line))
+
+        elif search(RE.KEY, line):
+            song['key'] = search.match.group('key')
+        elif line.strip():
+            if song['title'] is None:
+                song['title'] = line.strip()
+            elif song['author'] is None:
+                song['author'] = line.strip()
+            else:
+                song['blurb'] += line.strip()
+        else:
+            break
+
+    for line in line_iter:
+        if not line.strip():
+            # reached the end of a section
+            if section is not None and section_lines:
+                song['sections'][section] = '\n'.join(section_lines)
+            section = None
+            section_lines = []
+            continue
+
+        if RE.SECTION.search(line):
+            if section is not None and section_lines:
+                song['sections'][section] = '\n'.join(section_lines)
+            section = line.strip()
+            section_lines = []
+        elif search(RE.CCLI, line):
+            song['ccli'] = search.match.groups()[0]
+            song['legal'] = '\n'.join(line_iter)
+            break
+        else:  # normal line
+            if section is None:
+                section = 'VERSE {}'.format(verse_counter)
+                verse_counter += 1
+            if '|' in line:
+                line = re.sub(r'(^|[^\[])\|([^]]|$)', '[|]', line)
+            section_lines.append(line.rstrip())
+
+    if section is not None and section_lines:
+        song['sections'][section] = '\n'.join(section_lines)
 
     return song

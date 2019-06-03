@@ -5,7 +5,7 @@ TEMPLATE ?= index.html
 DIR ?= samples
 
 
-build: dist/$(TEMPLATE) 
+build: dist/$(TEMPLATE)
 	python3 src/build.py $(DIR) --template=dist/$(TEMPLATE) > dist/setlist.html
 
 dist/inline.html: dist/main.js dist/index.html dist/main.css

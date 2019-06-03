@@ -37,17 +37,13 @@ def main(args):
     for path in paths:
         if path.endswith('.pdf'):
             songs.append(parse.parse_pdf(path, args.debug))
+        elif path.endswith('.onsong'):
+            songs.append(parse.parse_onsong(path))
 
     if args.debug:
         for song in songs:
-            print(song['title'])
-            print(song['key'])
-            print(song['time'])
-            print(song['tempo'])
-            print(song['ccli'])
-            for name, section in song['sections'].items():
-                print(name)
-                print(section)
+            parse.print_song(song)
+
     else:
         with open(args.template) as fp:
             template = fp.read()

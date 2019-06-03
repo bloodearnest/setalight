@@ -21,7 +21,7 @@ function copy (obj) {
 // make local copy of the orginal song, possibly converting along the way
 function load (orig) {
   var song = copy(orig)
-  if (song.type === 'chordpro' || song.type === 'pdf') {
+  if (song.type === 'onsong' || song.type === 'pdf') {
     return song
   } else {
     console.error('Could not load song type ' + song.type)
@@ -40,7 +40,7 @@ function SetList ({ songs }) {
       switch (direction) {
         case 'right':
         case KEY.RIGHT:
-          setActive(Math.min(active + 1, songs.length - 1))
+          setActive(Math.min(active + 1, songs.length)) // +1 because of index page
           break
         case 'left':
         case KEY.LEFT:
@@ -54,7 +54,11 @@ function SetList ({ songs }) {
     [active, setActive]
   )
 
-  useEventListener('keydown', ev => { switchSong(ev.which) && ev.preventDefault() })
+  useEventListener('keydown', ev => {
+    if (switchSong(ev.which)) {
+      ev.preventDefault()
+    }
+  })
   useSwipe(switchSong, window)
 
   return (
