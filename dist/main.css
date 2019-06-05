@@ -9,6 +9,7 @@
 
 body {
   width: 100%;
+  user-select: none;
 }
 
 :root {
@@ -23,6 +24,7 @@ body {
 
 
 #setlist {
+  width: 100vw;
   white-space: nowrap;  /* lets out inline-block .page's be horizontal list offscreen */
   overflow-y: hidden;   /* scroll snap doesn't work without this. IDK why */
   /* firefox, old standard */
@@ -63,6 +65,15 @@ body {
 .song header.title {
   font-size: 130%;
   margin-bottom: 0.5em;
+}
+
+.song header .key {
+  border: 0;
+  outline: 0;
+}
+
+.song header .key option {
+  outline: 0;
 }
 
 .song header.title span.info {

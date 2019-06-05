@@ -3,6 +3,7 @@ import { useState, useCallback } from 'preact/hooks'
 import { useEventListener, useSwipe } from './hooks'
 import { tokenise, TOKENS } from './chordpro'
 import { map, copy, toggleFullScreen, toggleWakeLock } from './platform'
+import { transposeChord, calculateTranspose, NOTES_ALL } from './music'
 
 const SONGDATA = JSON.parse(document.getElementById('songdata').innerHTML)
 
@@ -48,32 +49,39 @@ function Index({ songs }) {
 }
 
 function Song ({ song }) {
+  const [transposedKey, setTransposedKey] = useState(song.key)
+  var transposeMap = null
+  if (song.key && transposedKey != song.key) {
+    transposeMap = calculateTranspose(song.key, transposedKey)
+  }
   return (
       <article class="song page">
-        <SongTitle song={song} />
-        {map(song.sections, (name, section) => <Section name={name} section={section} />)}
+        <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey}/>
+        {map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap}/>)}
       </article>
   )
 }
 
-function SongTitle ({ song }) {
-  var nodes = []
-  var key = song.key ? song.key : ''
-  if (song.capo) {
-    key += ' Capo ' + song.capo
-  }
-  nodes.push(key)
+function SongTitle ({ song, transposedKey, setKey }) {
+  let key = transposedKey || song.key || ''
+  let nodes = []
+  if (song.capo) nodes.push('Capo ' + song.capo)
   if (song.time) nodes.push(song.time)
   if (song.tempo) nodes.push(song.tempo)
 
   return (
     <header class='title'>{ song['title'] }
-      <span class='info'>{ nodes.join(' | ') }</span>
+      <span class='info'>
+        <select class="key" value={key} onChange={ev => setKey(ev.target.value)}>
+          {NOTES_ALL.map(n => <option >{n}</option>)}
+        </select>
+        { nodes.join(' | ') }
+      </span>
     </header>
   )
 }
 
-function Section ({ name, section }) {
+function Section ({ name, section, transposeMap }) {
   const [collapsed, setCollapsed] = useState(false)
   const [chords, setChords] = useState(true)
   const lines = section.split(/\n/)
@@ -88,7 +96,7 @@ function Section ({ name, section }) {
         <span class='expand toggle' onclick={toggleCollapsed} ontouchend={toggleCollapsed}> ⯆</span>
         &nbsp;<span class='show-chords toggle' onclick={toggleChords} ontouchend={toggleChords}>A♭</span>
       </header>
-      {lines.map((l) => <Line line={l} />)}
+      {lines.map((l) => <Line line={l} transposeMap={transposeMap} />)}
     </section>
   )
 }
@@ -102,7 +110,7 @@ TOKEN_CLASS[TOKENS.HYPHEN] = 'hyphen'
 
 const RAISED_TOKENS = [TOKENS.CHORD, TOKENS.COMMENT]
 
-function Line ({ line }) {
+function Line ({ line, transposeMap }) {
   // split on [chords] or {directives}, removing undefineds
   var nodes = []
   const [line_type, tokens] = tokenise(line)
@@ -116,6 +124,7 @@ function Line ({ line }) {
       case TOKENS.COMMENT:
         var wrapperClass = "chordlyric "
         var lyric = ' '
+        var value = current.value
         // is the next token not a chord/comment?
         if (next && !RAISED_TOKENS.includes(next.type)) {
           if (next.type === TOKENS.SPACE || next.value[0] === '-') {
@@ -125,16 +134,19 @@ function Line ({ line }) {
           lyric = next.value
           i += 1
         }
+        if (current.type === TOKENS.CHORD && transposeMap) {
+          value = transposeChord(value, transposeMap)
+        }
         if (line_type === 'both') {
           nodes.push(
             <span className={wrapperClass}>
-              <span className={className}>{current.value}</span>
+              <span className={className}>{value}</span>
               <span class="lyric">{lyric}</span>
             </span>
           )
         } else {
           nodes.push(
-            <span className={className}>{current.value}</span>
+            <span className={className}>{value}</span>
           )
         }
         break
