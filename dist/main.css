@@ -9,7 +9,6 @@
 
 body {
   width: 100%;
-  overflow: hidden;
 }
 
 :root {
@@ -22,25 +21,29 @@ body {
   --scale: 3vw;
 }
 
+
 #setlist {
-  overflow-y: scroll;
-  overflow-x: hidden;
-  display: flex;
+  white-space: nowrap;  /* lets out inline-block .page's be horizontal list offscreen */
+  overflow-y: hidden;   /* scroll snap doesn't work without this. IDK why */
+  /* firefox, old standard */
+  scroll-snap-type: mandatory;
+  scroll-snap-points-x: repeat(100%);
+  /* chrome, current standard */
+  scroll-snap-type: x mandatory;
 }
 
-.container {
-  width: 100vw;
-  height: 100vh;
-  transition: all 0.4s ease-in-out;
-  flex: 1;
-  alignt-self: baseline;
+.page {
+  display: inline-block;      /* combined with white-space: nowrap in parent, gives us a horizontal list */
+  padding-left: 0.5vw;        /* TODO: use calc for padding/width? */
+  width: 99.5vw;
+  height: 99.5vh;             /* leave some space at bottom for the horizontal scroll bar of parent */
+  scroll-snap-align: start;   /* snap to left edge */
+  overflow-y: auto;           /* vertical scroll within this page */
+  overflow-x: hidden;         /* horizontal scroll in this page, just the parent */
 }
 
 .song, .index {
-  padding-left: 0.5vw;
-  width: 99.5vw;
   font-size: var(--scale);
-  overflow-x: hidden
 }
 
 .index header {

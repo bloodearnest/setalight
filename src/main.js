@@ -33,67 +33,32 @@ function load (orig) {
 
 // the main application component
 function SetList ({ songs }) {
-  const [active, setActive] = useState(0)
-
-  const switchSong = useCallback(
-    (direction) => {
-      var handled = true
-      switch (direction) {
-        case 'right':
-        case KEY.RIGHT:
-          setActive(Math.min(active + 1, songs.length)) // +1 because of index page
-          break
-        case 'left':
-        case KEY.LEFT:
-          setActive(Math.max(0, active - 1))
-          break
-        default:
-          handled = false
-      }
-      return handled
-    },
-    [active, setActive]
-  )
-
-  useEventListener('keydown', ev => {
-    if (switchSong(ev.which)) {
-      ev.preventDefault()
-    }
-  })
-  useSwipe(switchSong, window)
-
   return (
     <Fragment>
-      <Index songs={songs} active={active}/>
-      { songs.map((song, i) => <Song song={song} index={i} active={active} />) }
+      <Index songs={songs}/>
+      { songs.map((song) => <Song song={song} />) }
     </Fragment>
   )
 }
 
-function Index({ songs, active }) {
-  const x = active * -(window.innerWidth)
+function Index({ songs }) {
   return (
-    <div class="container" style={{ transform: 'translateX(' + x + 'px)' }}>
-      <article class="index">
+      <article class="index page">
         <header>Date goes Here</header>
         <header>Leader goes here</header>
         <ul>
-          {songs.map((s, i) => <li>{s.title} | {s.key}</li>)}
+          {songs.map((s) => <li>{s.title} | {s.key}</li>)}
         </ul>
       </article>
-    </div>
   )
 }
 
-function Song ({ song, index, active }) {
-  const x = active * -(window.innerWidth)
+function Song ({ song }) {
   return (
-    <div class="container" style={{ transform: 'translateX(' + x + 'px)' }}>
-      <article class="song">
+      <article class="song page">
         <SongTitle song={song} />
         {map(song.sections, (name, section) => <Section name={name} section={section} />)}
       </article>
-    </div>
   )
 }
 
