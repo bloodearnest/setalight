@@ -46,6 +46,7 @@
     "webpack-cli": "^3.3.2"
   },
   "dependencies": {
+    "drag-drop-touch-polyfill": "^1.0.0",
     "preact": "^10.0.0-beta.1"
   }
 }

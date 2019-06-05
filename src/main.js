@@ -1,5 +1,6 @@
-import { h, render, Fragment } from 'preact'
+import { h, render, Fragment, Component } from 'preact'
 import { useState, useCallback } from 'preact/hooks'
+import { useDrag } from 'preact/hooks'
 import { useEventListener, useSwipe } from './hooks'
 import { tokenise, TOKENS } from './chordpro'
 import { map, copy, toggleFullScreen, toggleWakeLock } from './platform'
@@ -7,24 +8,14 @@ import { transposeChord, calculateTranspose, NOTES_ALL } from './music'
 
 const SONGDATA = JSON.parse(document.getElementById('songdata').innerHTML)
 
-// make local copy of the orginal song, possibly converting along the way
-function load (orig) {
-  var song = copy(orig)
-  if (song.type === 'onsong' || song.type === 'pdf') {
-    return song
-  } else {
-    console.error('Could not load song type ' + song.type)
-    console.log(song)
-    return song
-  }
-}
-
 // the main application component
-function SetList ({ songs }) {
+function SetList ({ setlist }) {
+  const [order, setOrder] = useState(setlist.order)
+  const setNewOrder = useCallback(o => setOrder(o), [order, setOrder])
   return (
     <Fragment>
-      <Index songs={songs}/>
-      { songs.map((song) => <Song song={song} />) }
+      <Index setlist={setlist} order={order} setOrder={setNewOrder}/>
+      {order.map((id) => <Song key={id} song={setlist.songs[id]} />) }
     </Fragment>
   )
 }
@@ -34,16 +25,90 @@ function toggleSetlist(ev) {
   toggleWakeLock()
 }
 
-function Index({ songs }) {
+function Index({ setlist, order, setOrder }) {
+  var draggedItem = null
+
+  const dragStart = e => {
+    draggedItem = e.target
+    draggedItem.classList.add('dragging')
+    e.dataTransfer.effectAllowed = 'move'
+    const payload = {song_id: e.target.getAttribute('data-id')}
+    e.dataTransfer.setData('application/json', JSON.stringify(payload))
+  }
+
+  const dragOver = e => {
+    if (e.preventDefault) e.preventDefault(); // Necessary. Allows us to drop.
+    e.dataTransfer.dropEffect = 'move'
+    return false
+  }
+
+  const dragEnter = e => {
+    // the element here is the <span>, not the <li>
+    if (e.target !== draggedItem) {
+      e.target.classList.add('over')
+    }
+  }
+  const dragLeave = e => e.target.classList.remove('over')
+  const dragEnd = e => {
+    for (const node of document.querySelectorAll('.songlist .over')) {
+      node.classList.remove('over')
+    }
+  }
+
+  const drop = e => {
+    // this / e.target is the drop target
+    if (e.stopPropagation) e.stopPropagation(); // stops the browser from redirecting.
+    e.target.classList.remove('over')
+    draggedItem = null
+
+    const {song_id} = JSON.parse(e.dataTransfer.getData('application/json'))
+    const target_index = parseInt(e.target.getAttribute('data-index'))
+    let newOrder = []
+    for (let index = 0; index < order.length; index += 1) {
+      const id = order[index]
+      if (id === song_id) {
+        continue
+      }
+      newOrder.push(id)
+      if (index === target_index) {
+        newOrder.push(song_id)
+      }
+    }
+    setOrder(newOrder)
+    return false;
+  }
+
   return (
       <article class="index page">
-        <header>Date goes Here
+        <header>{ setlist.title }
           <span class="fullscreen" onclick={toggleSetlist} ontouchstart={toggleSetlist}>⛶ </span>
         </header>
-        <header>Leader goes here</header>
-        <ul>
-          {songs.map((s) => <li>{s.title} | {s.key}</li>)}
-        </ul>
+        <ol class="songlist">
+          {order.map((id, index) => {
+            const song = setlist.songs[id]
+            return (
+              <li>
+                <span
+                  key={'index-' + id}
+                  data-id={id}
+                  data-index={index}
+                  draggable
+                  ondragstart={dragStart}
+                  ondragover={dragOver}
+                  ondragenter={dragEnter}
+                  ondragleave={dragLeave}
+                  ondragend={dragEnd}
+                  ondrop={drop}
+                >
+                  {song.title || 'Could not parse'} | { song.key || 'Unknown key'}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+        <section>
+          <p>{ setlist.message }</p>
+        </section>
       </article>
   )
 }
@@ -134,7 +199,7 @@ function Line ({ line, transposeMap }) {
           lyric = next.value
           i += 1
         }
-        if (current.type === TOKENS.CHORD && transposeMap) {
+        if (transposeMap && current.type === TOKENS.CHORD && value !== '|') {
           value = transposeChord(value, transposeMap)
         }
         if (line_type === 'both') {
@@ -169,6 +234,6 @@ function Line ({ line, transposeMap }) {
 }
 
 var app = document.getElementById('setlist')
-var songs = SONGDATA.map((song) => load(song))
-console.log(songs)
-render(<SetList songs={songs} />, app)
+var setlist = copy(SONGDATA)
+console.log(setlist)
+render(<SetList setlist={setlist} />, app)

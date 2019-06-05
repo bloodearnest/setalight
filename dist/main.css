@@ -58,9 +58,25 @@ body {
   margin: 0.3em;
 }
 
-.index li {
-  padding-left: 1em;
+.index .songlist {
+  margin-left: 3em;
+  margin-bottom: 1em;
 }
+
+.index .songlist li {
+  margin-bottom: 2px;
+}
+.index .songlist span {
+  border-bottom: 2px solid #222;
+}
+
+.index .songlist span.dragging {
+  opacity: 0.5;
+}
+.index .songlist span.over {
+  border-bottom: 2px dashed #fff;
+}
+
 
 .song header.title {
   font-size: 130%;
@@ -70,10 +86,12 @@ body {
 .song header .key {
   border: 0;
   outline: 0;
+  font-size: var(--scale);
 }
 
 .song header .key option {
   outline: 0;
+  font-size: 50%;
 }
 
 .song header.title span.info {

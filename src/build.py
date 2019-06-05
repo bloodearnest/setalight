@@ -17,14 +17,22 @@ parser.add_argument(
 )
 
 
-def build_site(title, text, songs, template):
-    output = template.replace('SONGDATA', json.dumps(songs, indent=4))
-    output = output.replace('TITLE', title)
+def build_site(setlist, template):
+    output = template.replace('SONGDATA', json.dumps(setlist, indent=4))
+    output = output.replace('TITLE', setlist['title'])
     print(output)
 
 
+def get_song_id(song, i):
+    if song['ccli']:
+        return song['ccli']
+    elif song['title']:
+        return song['title'].lower().replace(' ', '-')
+    else:
+        return 'song-{}'.format(i)
+
+
 def main(args):
-    songs = []
     if os.path.isdir(args.dir):
         paths = [os.path.join(args.dir, f) for f in os.listdir(args.dir)]
     else:
@@ -34,20 +42,33 @@ def main(args):
     if args.debug:
         print(paths)
 
-    for path in paths:
+    songs = {}
+    order = []
+
+    for i, path in enumerate(paths):
         if path.endswith('.pdf'):
-            songs.append(parse.parse_pdf(path, args.debug))
+            song = parse.parse_pdf(path, args.debug)
         elif path.endswith('.onsong'):
-            songs.append(parse.parse_onsong(path))
+            song = parse.parse_onsong(path)
+        id = get_song_id(song, i)
+        song['id'] = id
+        order.append(id)
+        songs[id] = song
+
+    setlist = {
+        'title': 'Test Setlist',
+        'message': 'test\ntesting\ntester',
+        'songs': songs,
+        'order': order,
+    }
 
     if args.debug:
-        for song in songs:
+        for id, song in songs.items:
             parse.print_song(song)
-
     else:
         with open(args.template) as fp:
             template = fp.read()
-        build_site('12th May', 'test\ntesting\ntester', songs, template)
+        build_site(setlist, template)
 
 
 if __name__ == '__main__':
