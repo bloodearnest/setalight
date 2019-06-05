@@ -20,19 +20,21 @@ class RE:
     )
     TIME = re.compile(r'time\s+[-:]\s+(\d+/\d+)', re.I)
     TEMPO = re.compile(r'tempo\s+[-:]\s+(\d+)', re.I)
-    SECTION = re.compile(r"""^(
+    SECTION = re.compile(r"""^\(?(
         intro|
         verse|
         chorus|
+        refrain|
         bridge|
-        pre-chorus|
+        pre[- ]?chorus|
         instrumental|
         interlude|
         turnaround|
         ending|
         coda|
         outro
-    )""", re.I | re.VERBOSE)
+        )\)?
+    """, re.I | re.VERBOSE)
     # this sucker is a beauty
     CHORD = re.compile(r"""
         ^
@@ -52,8 +54,8 @@ class RE:
     # used to split a chord line into tokens including splitting on |
     CHORD_SPLIT = re.compile(r"""
         [ ](\([^\d].*?\))|  # matches (To SECTION) or (CHORD), keep
-        (\|)|                # bar lines, keep
-        [ ]+               # spaces, discard
+        (\|)|               # bar lines, keep
+        [ ]+                # spaces, discard
     """, re.VERBOSE)
 
     # CHORDPRO directive
@@ -359,10 +361,11 @@ def parse_pdf(path, debug):
             line_iter = iter(lines)
 
     # default name
-    section_name = 'VERSE 1'
+    section_name = None
     section_lines = []
     chord_line = None
     superscript_line = None
+
     # set a default first section name, in case it's missing
 
     for line in line_iter:
@@ -379,6 +382,13 @@ def parse_pdf(path, debug):
             if chord_line:
                 section_lines.append((chord_line, None))
             if section_lines:
+                if section_name is None:
+                    if all(l is None for c, l in section_lines):
+                        # all chords, is intro
+                        section_name = 'INTRO'
+                    else:
+                        # some lyrics, assume V1
+                        section_name = 'VERSE 1'
                 song['sections'][section_name] = section_lines
             chord_line = None
             section_name = line.strip()
@@ -408,6 +418,9 @@ def parse_pdf(path, debug):
         section_lines.append((chord_line, None))
     # finish final section
     if section_lines:
+        if section_name is None:
+            # no section names at all. It happens.
+            section_name = 'VERSE 1'
         song['sections'][section_name] = section_lines
 
     # did we reached the CCLI number
