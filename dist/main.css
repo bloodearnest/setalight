@@ -49,6 +49,13 @@ body {
 .index header {
   margin-bottom: 1em;
 }
+
+.index header span.fullscreen {
+  float: right;
+  font-size: var(--scale);
+  margin: 0.3em;
+}
+
 .index li {
   padding-left: 1em;
 }

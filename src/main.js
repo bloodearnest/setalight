@@ -2,22 +2,9 @@ import { h, render, Fragment } from 'preact'
 import { useState, useCallback } from 'preact/hooks'
 import { useEventListener, useSwipe } from './hooks'
 import { tokenise, TOKENS } from './chordpro'
+import { map, copy, toggleFullScreen, toggleWakeLock } from './platform'
 
 const SONGDATA = JSON.parse(document.getElementById('songdata').innerHTML)
-const KEY = {
-  LEFT: 37,
-  RIGHT: 39
-}
-
-// I cannot believe that js has no built-in way to do this!
-function map (obj, f) {
-  return Object.keys(obj).map((key) => f(key, obj[key]))
-}
-
-// oh the humanity
-function copy (obj) {
-  return JSON.parse(JSON.stringify(obj))
-}
 
 // make local copy of the orginal song, possibly converting along the way
 function load (orig) {
@@ -41,10 +28,17 @@ function SetList ({ songs }) {
   )
 }
 
+function toggleSetlist(ev) {
+  toggleFullScreen()
+  toggleWakeLock()
+}
+
 function Index({ songs }) {
   return (
       <article class="index page">
-        <header>Date goes Here</header>
+        <header>Date goes Here
+          <span class="fullscreen" onclick={toggleSetlist} ontouchstart={toggleSetlist}>⛶ </span>
+        </header>
         <header>Leader goes here</header>
         <ul>
           {songs.map((s) => <li>{s.title} | {s.key}</li>)}
