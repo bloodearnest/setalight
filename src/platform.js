@@ -36,7 +36,11 @@ function onFullScreenChange(ev) {
     wakeLockRequest.cancel();
     wakeLockRequest = null;
     console.log('cancelled wakelock as exiting fullscreen')
+  } else if (screen.keepAwake) {
+    screen.keepAwake = false
+    console.log('setting screen.keepAwake=false as exiting fullscreen')
   }
+
 }
 document.addEventListener('fullscreenchange', onFullScreenChange)
 document.addEventListener('fullscreenerror', (err) => { console.error(err) })
@@ -58,6 +62,9 @@ function toggleWakeLock() {
       return;
     }
     wakeLockRequest = wakeLockObj.createRequest();
+  } else if (screen.keepAwake !== undefined) {
+    screen.keepAwake = !screen.keepAwake
+    console.log('Setting screen.keepAwake to ', screen.keepAwake)
   }
 }
 
@@ -67,8 +74,10 @@ if ('getWakeLock' in navigator) {
   navigator.getWakeLock('screen')
     .then(initialiseWakeLock)
     .catch(err => console.error('👎', 'getWakeLock', err))
+} else if (screen.keepAwake !== undefined) {
+  console.log('using screen.keepAwake')
 } else {
-  console.log('getWakeLock not supported')
+  console.log('no screen wakelock API supported')
   // TODO: if chrome, link user to chrome://flags/#enable-experimental-web-platform-features
   // otherwise, try https://github.com/richtr/NoSleep.js
 }
