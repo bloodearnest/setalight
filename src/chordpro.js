@@ -25,12 +25,19 @@ function tokenise(line) {
     counts[t] = 0
   }
 
-  for (const token of tokens) {
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]
+    const next_token = index >= tokens.length ? null : tokens[index + 1]
     var _type = null
     var _value = token
     if (isChord(token)) {
       _type = TOKENS.CHORD
       _value = token.substring(1, token.length - 1) // strip []
+      if (current && next_token && current.type === TOKENS.SPACE && next_token[0] === '-') {
+        // we got sth like "word [c]- word"
+        current.type = TOKENS.HYPHEN
+      }
+
     } else if (isComment(token)) {
       _type = TOKENS.COMMENT
       const [directive, text] = token.substring(1, token.length - 1).split(':')
