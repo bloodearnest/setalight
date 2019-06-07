@@ -23,7 +23,7 @@ body {
 }
 
 
-#setlist {
+#app {
   width: 100vw;
   white-space: nowrap;  /* lets out inline-block .page's be horizontal list offscreen */
   overflow-y: hidden;   /* scroll snap doesn't work without this. IDK why */
@@ -55,25 +55,21 @@ body {
 .index header span.fullscreen {
   float: right;
   font-size: var(--scale);
-  margin: 0.3em;
+  margin-top: 0.2em;
+  margin-right: 1em;
 }
 
 .index .songlist {
-  margin-left: 3em;
+  margin-left: 1em;
   margin-bottom: 1em;
 }
 
-.index .songlist li {
-  margin-bottom: 2px;
-}
-.index .songlist span {
-  border-bottom: 2px solid #222;
-}
+.index .songlist td { padding-right: 0.5em; }
 
-.index .songlist span.dragging {
+.index .songlist .dragging {
   opacity: 0.5;
 }
-.index .songlist span.over {
+.index .songlist .over {
   border-bottom: 2px dashed #fff;
 }
 
@@ -97,7 +93,8 @@ body {
 .song header.title span.info {
   float: right;
   font-size: var(--scale);
-  margin: 0.3em;
+  margin-top: 0.2em;
+  margin-right: 1em;
 }
 
 .song section {
@@ -169,10 +166,3 @@ body {
 .song section p .chordlyric span.chord { float: left }
 .song section p .chordlyric span.comment { float: left }
 .song section p .chordlyric span.lyric { float: left; clear: both }
-
-/*
-.song section p .chordlyric .chord {
-  position: absolute;
-  bottom: var(--scale);
-}
-*/

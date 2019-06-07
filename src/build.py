@@ -18,7 +18,7 @@ parser.add_argument(
 
 
 def build_site(setlist, template):
-    output = template.replace('SONGDATA', json.dumps(setlist, indent=4))
+    output = template.replace('SETLIST', json.dumps(setlist, indent=4))
     output = output.replace('TITLE', setlist['title'])
     print(output)
 

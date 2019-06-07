@@ -13,6 +13,11 @@ function copy (obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
+// nicer anchor link behavior
+function scrollToInternal(target) {
+  document.getElementById(target).scrollIntoView({ behavior: 'smooth' })
+}
+
 // toggle fullscreen, with x-browser support
 function toggleFullScreen() {
   var doc = window.document;
@@ -85,6 +90,7 @@ if ('getWakeLock' in navigator) {
 export {
   map,
   copy,
+  scrollToInternal,
   toggleFullScreen,
   toggleWakeLock,
 }
