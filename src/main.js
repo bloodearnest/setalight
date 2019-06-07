@@ -115,6 +115,8 @@ function Index({ setlist, order, setOrder }) {
 }
 
 function FakeInternalLink({text, target}) {
+  // this avoids actuall setting window.location.hash, which I think we want
+  // also, it avoids the default link drag behaviour
   const go = e => scrollToInternal(target)
   return <span class="link" onclick={go} ontouchstart={go}>{text}</span>
 }
