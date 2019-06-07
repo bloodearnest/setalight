@@ -1,11 +1,9 @@
 import { h, render, Fragment, Component } from 'preact'
 import { useState, useCallback } from 'preact/hooks'
-import { useDrag } from 'preact/hooks'
-import { useEventListener, useSwipe } from './hooks'
 import { tokenise, TOKENS } from './chordpro'
 import { map, copy, scrollToInternal, toggleFullScreen, toggleWakeLock } from './platform'
 import { transposeChord, calculateTranspose, NOTES_ALL } from './music'
-
+import Pdf from './pdf'
 
 // the main application component
 function SetList ({ setlist }) {
@@ -13,18 +11,25 @@ function SetList ({ setlist }) {
   const setNewOrder = useCallback(o => setOrder(o), [order, setOrder])
   return (
     <Fragment>
-      <Index setlist={setlist} order={order} setOrder={setNewOrder}/>
+      <Index setlist={setlist} order={order} setOrder={setNewOrder} />
       {order.map((id) => <Song key={id} song={setlist.songs[id]} />) }
     </Fragment>
   )
 }
 
-function toggleSetlist(ev) {
+function toggleSetlist (ev) {
   toggleFullScreen()
   toggleWakeLock()
 }
 
-function Index({ setlist, order, setOrder }) {
+function FakeInternalLink ({ text, target, children }) {
+  // this avoids actuall setting window.location.hash, which I think we want
+  // also, it avoids the default link drag behaviour
+  const go = e => scrollToInternal(target)
+  return <span class='link' onclick={go} ontouchstart={go}>{text}{children}</span>
+}
+
+function Index ({ setlist, order, setOrder }) {
   // this does a crude DOM-based Drag and Drop list reordering
   // there's other way to get info that's also available in dragenter to the song being dragged :(
   let draggedSongId = null
@@ -35,7 +40,7 @@ function Index({ setlist, order, setOrder }) {
     e.dataTransfer.effectAllowed = 'move'
   }
   const dragOver = e => {
-    if (e.preventDefault) e.preventDefault(); // Necessary. Allows us to drop.
+    if (e.preventDefault) e.preventDefault() // Necessary. Allows us to drop.
     e.dataTransfer.dropEffect = 'move'
     return false
   }
@@ -50,7 +55,7 @@ function Index({ setlist, order, setOrder }) {
 
   const drop = e => {
     // e.target is the drop target
-    if (e.stopPropagation) e.stopPropagation(); // stops the browser from redirecting.
+    if (e.stopPropagation) e.stopPropagation() // stops the browser from redirecting.
 
     let node = e.target.closest('.song-index')
     const thisSongId = node.getAttribute('data-id')
@@ -73,52 +78,61 @@ function Index({ setlist, order, setOrder }) {
     }
     setOrder(newOrder)
     draggedSongId = null
-    return false;
+    return false
   }
 
   return (
-      <article class="index page" id="index">
-        <header>{ setlist.title }
-          <span class="fullscreen" onclick={toggleSetlist} ontouchstart={toggleSetlist}>⛶</span>
-        </header>
-        <table class="songlist">
-          {order.map((id, index) => {
-            const song = setlist.songs[id]
-            return (
-              <tr>
-                <td key={'index-' + id}
-                    class="song-index"
-                    data-id={id}
-                    data-index={index}
-                    draggable
-                    ondragstart={dragStart}
-                    ondragover={dragOver}
-                    ondragenter={dragEnter}
-                    ondragleave={dragLeave}
-                    ondragend={dragEnd}
-                    ondrop={drop}
-                >
-                  <span class="handle">≡</span> <FakeInternalLink text={song.title} target={song.id}/>
-                </td>
-                <td>{ song.key || '?'}</td>
-                <td>{ song.time }</td>
-                <td>{ song.tempo }</td>
-              </tr>
-            )
-          })}
-        </table>
-        <section>
-          <p>{ setlist.message }</p>
-        </section>
-      </article>
+    <article class='index page' id='index'>
+      <header>{ setlist.title }
+        <span class='fullscreen' onclick={toggleSetlist} ontouchstart={toggleSetlist}><i class='icon-resize-full' /></span>
+      </header>
+      <table class='songlist'>
+        {order.map((id, index) => {
+          const song = setlist.songs[id]
+          return (
+            <tr>
+              <td key={'index-' + id}
+                class='song-index'
+                data-id={id}
+                data-index={index}
+                draggable
+                ondragstart={dragStart}
+                ondragover={dragOver}
+                ondragenter={dragEnter}
+                ondragleave={dragLeave}
+                ondragend={dragEnd}
+                ondrop={drop}
+              >
+                <i class='icon-menu' /> <FakeInternalLink text={song.title} target={song.id} />
+              </td>
+              <td>{ song.key || '?'}</td>
+              <td>{ song.time }</td>
+              <td>{ song.tempo }</td>
+            </tr>
+          )
+        })}
+      </table>
+      <section>
+        <p>{ setlist.message }</p>
+      </section>
+    </article>
   )
 }
 
-function FakeInternalLink({text, target}) {
-  // this avoids actuall setting window.location.hash, which I think we want
-  // also, it avoids the default link drag behaviour
-  const go = e => scrollToInternal(target)
-  return <span class="link" onclick={go} ontouchstart={go}>{text}</span>
+function PdfSheet ({ path }) {
+  const [zoom, setZoom] = useState(1.0)
+
+  const zoomCallback = useCallback(e => {
+    e.preventDefault()
+    const newZoom = zoom + (e.deltaY * 0.001)
+    setZoom(Math.min(Math.max(0.5, newZoom), 3))
+  }, [zoom, setZoom])
+
+  return (
+    <div class='pdfcontainer' onwheel={zoomCallback}>
+      <Pdf file={path} scale={zoom} />
+    </div>
+  )
 }
 
 function Song ({ song }) {
@@ -127,11 +141,19 @@ function Song ({ song }) {
   if (song.key && transposedKey != song.key) {
     transposeMap = calculateTranspose(song.key, transposedKey)
   }
-  return (
-      <article class="song page" id={song.id}>
-        <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey}/>
-        {map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap}/>)}
+  if (song.type === 'pdf-failed') {
+    return (
+      <article class='song page pdf' id={song.id}>
+        <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} />
+        <PdfSheet path={song.file} />
       </article>
+    )
+  }
+  return (
+    <article class='song page' id={song.id}>
+      <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} />
+      {map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap} />)}
+    </article>
   )
 }
 
@@ -145,11 +167,11 @@ function SongTitle ({ song, transposedKey, setKey }) {
   return (
     <header class='title'>{ song['title'] }
       <span class='info'>
-        <select class="key" value={key} onChange={ev => setKey(ev.target.value)}>
+        <select class='key' value={key} onChange={ev => setKey(ev.target.value)}>
           {NOTES_ALL.map(n => <option >{n}</option>)}
         </select>
         | { nodes.join(' | ') }
-        | <FakeInternalLink text="⌂" target="index"/>
+        | <FakeInternalLink target='index'><i class='icon-home' /></FakeInternalLink>
       </span>
     </header>
   )
@@ -160,10 +182,12 @@ function Section ({ name, section, transposeMap }) {
   const [chords, setChords] = useState(true)
   const lines = section.split(/\n/)
   const toggleCollapsed = e => {
+    console.log(e)
     e.preventDefault()
     setCollapsed(!collapsed)
   }
   const toggleChords = e => {
+    console.log(e)
     e.preventDefault()
     setChords(!chords)
   }
@@ -172,15 +196,14 @@ function Section ({ name, section, transposeMap }) {
     <section className={_class}>
       <header>
         <span class='name toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}>{name}</span>
-        <span class='collapse toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> ⯅</span>
-        <span class='expand toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> ⯆</span>
+        <span class='collapse toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> <i class='icon-angle-up' /></span>
+        <span class='expand toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> <i class='icon-angle-down' /></span>
         &nbsp;<span class='show-chords toggle' onclick={toggleChords} ontouchstart={toggleChords}>A♭</span>
       </header>
       {lines.map((l) => <Line line={l} transposeMap={transposeMap} />)}
     </section>
   )
 }
-
 
 const TOKEN_CLASS = {}
 TOKEN_CLASS[TOKENS.CHORD] = 'chord'
@@ -202,7 +225,7 @@ function Line ({ line, transposeMap }) {
     switch (current.type) {
       case TOKENS.CHORD:
       case TOKENS.COMMENT:
-        var wrapperClass = "chordlyric "
+        var wrapperClass = 'chordlyric '
         var lyric = ' '
         var value = current.value
         // is the next token not a chord/comment?
@@ -221,7 +244,7 @@ function Line ({ line, transposeMap }) {
           nodes.push(
             <span className={wrapperClass}>
               <span className={className}>{value}</span>
-              <span class="lyric">{lyric}</span>
+              <span class='lyric'>{lyric}</span>
             </span>
           )
         } else {
@@ -241,14 +264,14 @@ function Line ({ line, transposeMap }) {
         break
 
       default:
-        console.error("Unknown token type: ", current)
-        break;
+        console.error('Unknown token type: ', current)
+        break
     }
   }
   return <p className={'line ' + line_type}>{nodes}</p>
 }
 
-function SetAlight(original_setlist, element) {
+function SetAlight (original_setlist, element) {
   let setlist = copy(original_setlist)
   console.log(setlist)
   render(<SetList setlist={setlist} />, element)

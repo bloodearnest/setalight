@@ -7,13 +7,12 @@ const TOKENS = {
   COMMENT: 'COMMENT',
   HYPHEN: 'HYPHEN',
   LYRIC: 'LYRIC',
-  SPACE: 'SPACE',
+  SPACE: 'SPACE'
 }
-
 
 // tokenise the chordpro line, returning pairs of [current, next] tokens so
 // that there is some lookahead context
-function tokenise(line) {
+function tokenise (line) {
   // split line on chords, comments, hyphens, and spaces, keeping the delimiters
   const tokens = line.split(/(\[.+?\])|(\{.+?\})|( - |- | -)|( +)/g).filter(Boolean)
   const pairs = []
@@ -37,7 +36,6 @@ function tokenise(line) {
         // we got sth like "word [c]- word"
         current.type = TOKENS.HYPHEN
       }
-
     } else if (isComment(token)) {
       _type = TOKENS.COMMENT
       const [directive, text] = token.substring(1, token.length - 1).split(':')
@@ -51,7 +49,7 @@ function tokenise(line) {
     }
 
     counts[_type] += 1
-    const next = {'type': _type, 'value': _value}
+    const next = { 'type': _type, 'value': _value }
     if (current !== null) {
       pairs.push([current, next])
     }
@@ -70,8 +68,7 @@ function tokenise(line) {
   return [line_type, pairs]
 }
 
-
 export {
   TOKENS,
-  tokenise,
+  tokenise
 }

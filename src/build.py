@@ -52,6 +52,7 @@ def main(args):
             song = parse.parse_onsong(path)
         id = get_song_id(song, i)
         song['id'] = id
+        song['file'] = os.path.basename(path)
         order.append(id)
         songs[id] = song
 
