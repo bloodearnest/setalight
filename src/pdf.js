@@ -2,7 +2,7 @@ import { h } from 'preact'
 import { useState, useEffect, useRef, useMemo } from 'preact/hooks'
 import PdfJsLib from '@bundled-es-modules/pdfjs-dist/build/pdf'
 
-const WORKER_SRC = '@bundled-es-modules/pdfjs-dist/build/pdf.worker.js'
+const WORKER_SRC = 'pdf.worker.js'
 PdfJsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC
 
 const Pdf = ({ file, onDocumentComplete, page, scale }) => {
@@ -42,8 +42,6 @@ export const usePdf = ({ containerRef, file, page = 1, scale = 1 }) => {
     const viewport = page.getViewport({ scale: base_scale * scale })
     const canvas = document.createElement('canvas')
     const canvasContext = canvas.getContext('2d')
-    // canvas.style.width = `${viewport.width / dpRatio}px`;
-    // canvas.style.height = `${viewport.height / dpRatio}px`;
     canvas.height = viewport.height
     canvas.width = viewport.width
     const renderContext = {

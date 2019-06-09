@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import itertools
 import os
 import re
@@ -62,11 +62,56 @@ class RE:
     DIRECTIVE = re.compile(r'{(?P<directive>\w+):(?P<value>.*)}')
 
 
+KEY_CHORDS = {
+    'A':  'A Bm C#m D E F#m',
+    'Ab': 'Ab Bbm Cm Db Eb Fm',
+    'A#': 'A# Cm Dm D# F Gm',
+    'B':  'B C#m D#m E F# G#m',
+    'Bb': 'Bb Cm Dm Eb F Gm',
+    'C':  'C Dm Em F G Am',
+    'C#': 'C# D#m Fm F# G# A#m',
+    'D':  'D Em F#m G A Bm',
+    'Db': 'Db Ebm Fm Gb Ab Bbm',
+    'D#': 'D# Fm Gm G# A# Cm',
+    'E':  'E F#m G#m A B C#m',
+    'Eb': 'Eb Fm Gm Ab Bb Cm',
+    'F':  'F Gm Am Bb C Dm',
+    'F#': 'F# G#m A#m B C# D#m',
+    'G':  'G Am Bm C D Em',
+    'Gb': 'Gb Abm Bbm B Db Ebm',
+    'G#': 'G# A#m B#m C# D# Fm',
+}
+
+CHORD_KEYS = defaultdict(list)
+
+for key, chords in KEY_CHORDS.items():
+    for chord in chords.split(' '):
+        CHORD_KEYS[chord].append(key)
+
+
 def search(regex, text):
     """Helper for regex searching."""
     match = regex.search(text)
     search.match = match
     return match
+
+
+def infer_key(chords):
+    counts = defaultdict(int)
+    for c in chords:
+        if search(RE.CHORD, c):
+            d = search.match.groupdict()
+            if d['note']:
+                simple = d['note'] + (d.get('third') or '')
+                if simple in CHORD_KEYS:
+                    for key in CHORD_KEYS[c]:
+                        counts[key] += 1
+
+    if counts:
+        result = list(sorted(counts.items(), key=lambda i: i[1]))
+        return result[-1][0]
+    else:
+        return None
 
 
 # def get_pdf_type(path):
@@ -96,7 +141,7 @@ def convert_pdf(path):
     cmd = ['pdftotext', '-layout', '-enc', 'UTF-8', '-eol', 'unix', '-nopgbrk']
     try:
         _, output = tempfile.mkstemp()
-        subprocess.run(cmd + [path, output])
+        subprocess.run(cmd + [str(path), output])
         with open(output, 'r') as f:
             contents = f.read()
     finally:
@@ -296,6 +341,11 @@ def parse_header(header):
         yield 'capo', groupdict.get('capo')
         position = key.span()[0]
         yield 'title', header[0][:position].strip()
+    elif ' key ' in header[0].lower():
+        # we sometimes can't extract the actual key, and are left with "Key - "
+        # so clean that up
+        position = header[0].lower().find(' key ')
+        yield 'title', header[0][:position].strip()
     else:
         yield 'title', header[0].strip()
 
@@ -367,6 +417,7 @@ def parse_pdf(path, debug):
     superscript_line = None
 
     # set a default first section name, in case it's missing
+    chord_seen = []
 
     for line in line_iter:
         if not line.strip():  # skip blank lines
@@ -430,10 +481,19 @@ def parse_pdf(path, debug):
 
     # convert into chordpro
     for name, section_lines in song['sections'].items():
+        for chords, _ in section_lines:
+            if not chords:
+                continue
+            for c in chords.split(' '):
+                chord_seen.append(c.strip())
         song['sections'][name] = '\n'.join(
             chordpro_line(c, l) for c, l in section_lines
         )
 
+    inferred_key = infer_key(chord_seen)
+    song['inferred_key'] = inferred_key
+    if not song['key']:
+        song['key'] = inferred_key
     if debug:
         print_song(song)
 
@@ -495,8 +555,7 @@ META = {
 
 
 def parse_onsong(path):
-    with open(path, 'rb') as f:
-        raw = f.read()
+    raw = path.read_bytes()
     meta = chardet.detect(raw)
     encoding = meta['encoding']
     if 'UTF-16' in encoding:

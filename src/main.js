@@ -81,6 +81,21 @@ function Index ({ setlist, order, setOrder }) {
     return false
   }
 
+  let messages = []
+  /*
+  if (setlist.html) {
+    for (const msg of setlist.html) {
+      messages.push(<section dangerouslySetInnerHTML={{__html: msg}}/>)
+    }
+  } else
+  */
+  if (setlist.text) {
+    for (const msg of setlist.text) {
+      messages.push(<pre>{msg}</pre>)
+    }
+  }
+
+
   return (
     <article class='index page' id='index'>
       <header>{ setlist.title }
@@ -112,9 +127,7 @@ function Index ({ setlist, order, setOrder }) {
           )
         })}
       </table>
-      <section>
-        <p>{ setlist.message }</p>
-      </section>
+      {messages}
     </article>
   )
 }
@@ -182,12 +195,10 @@ function Section ({ name, section, transposeMap }) {
   const [chords, setChords] = useState(true)
   const lines = section.split(/\n/)
   const toggleCollapsed = e => {
-    console.log(e)
     e.preventDefault()
     setCollapsed(!collapsed)
   }
   const toggleChords = e => {
-    console.log(e)
     e.preventDefault()
     setChords(!chords)
   }

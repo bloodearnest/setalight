@@ -4,3 +4,4 @@ venv
 dist/main.js
 dist/setlist.html
 dist/inline.html
+dist/DragDropTouch.js

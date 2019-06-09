@@ -1,2 +1,3 @@
 #!/bin/bash
-make build DIR=$1
+set -eu
+make build SET=$1
