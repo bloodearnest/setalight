@@ -1,9 +1,11 @@
-import { h, render, Fragment, Component } from 'preact'
+import { h, render, Fragment } from 'preact'
 import { useState, useCallback } from 'preact/hooks'
 import { tokenise, TOKENS } from './chordpro'
 import { map, copy, scrollToInternal, toggleFullScreen, toggleWakeLock } from './platform'
 import { transposeChord, calculateTranspose, NOTES_ALL } from './music'
 import Pdf from './pdf'
+
+
 
 // the main application component
 function SetList ({ setlist }) {
@@ -21,11 +23,6 @@ function Page( {children} ) {
   return (
     <div class="page-container">{children}</div>
   )
-}
-
-function toggleSetlist (ev) {
-  toggleFullScreen()
-  toggleWakeLock()
 }
 
 function FakeInternalLink ({ text, target, children }) {
@@ -101,6 +98,10 @@ function Index ({ setlist, order, setOrder }) {
     }
   }
 
+  function toggleSetlist (ev) {
+    toggleFullScreen()
+    toggleWakeLock()
+  }
 
   return (
     <article class='index' id='index'>

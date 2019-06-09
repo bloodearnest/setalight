@@ -1,6 +1,7 @@
 import { h } from 'preact'
-import { useState, useEffect, useRef, useMemo } from 'preact/hooks'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'preact/hooks'
 import PdfJsLib from '@bundled-es-modules/pdfjs-dist/build/pdf'
+import { useEventListener } from './hooks'
 
 const WORKER_SRC = 'pdf.worker.js'
 PdfJsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC
@@ -22,6 +23,7 @@ Pdf.defaultProps = {
 
 export const usePdf = ({ containerRef, file, page = 1, scale = 1 }) => {
   const [pdf, setPdf] = useState()
+  const [width, setWidth] = useState(window.innerWidth)
 
   useEffect(() => {
     const config = { url: file }
@@ -33,12 +35,14 @@ export const usePdf = ({ containerRef, file, page = 1, scale = 1 }) => {
     if (pdf) {
       pdf.getPage(page).then((p) => drawPDF(p))
     }
-  }, [pdf, page, scale, containerRef])
+  }, [pdf, page, width, scale, containerRef])
+
+  useEventListener('resize', e => setWidth(window.innerWidth))
 
   // draw a page of the pdf
   const drawPDF = (page) => {
     const pageWidth = page.getViewport({ scale: 1.0 }).width
-    const base_scale = (screen.width / pageWidth)
+    const base_scale = width / pageWidth
     const viewport = page.getViewport({ scale: base_scale * scale })
     const canvas = document.createElement('canvas')
     const canvasContext = canvas.getContext('2d')
