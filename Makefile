@@ -1,7 +1,7 @@
 PYDIR = venv
 VENV = $(PYDIR)/.done
 PYBIN = $(PYDIR)/bin
-SET ?= test_sets/set1.eml
+SET ?= test_sets/set3.eml
 DIR ?= build
 
 

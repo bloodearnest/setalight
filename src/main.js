@@ -11,9 +11,15 @@ function SetList ({ setlist }) {
   const setNewOrder = useCallback(o => setOrder(o), [order, setOrder])
   return (
     <Fragment>
-      <Index setlist={setlist} order={order} setOrder={setNewOrder} />
-      {order.map((id) => <Song key={id} song={setlist.songs[id]} />) }
+      <Page><Index setlist={setlist} order={order} setOrder={setNewOrder} /></Page>
+      {order.map((id) => <Page><Song key={id} song={setlist.songs[id]} /></Page>) }
     </Fragment>
+  )
+}
+
+function Page( {children} ) {
+  return (
+    <div class="page-container">{children}</div>
   )
 }
 
@@ -97,7 +103,7 @@ function Index ({ setlist, order, setOrder }) {
 
 
   return (
-    <article class='index page' id='index'>
+    <article class='index' id='index'>
       <header>{ setlist.title }
         <span class='fullscreen' onclick={toggleSetlist} ontouchstart={toggleSetlist}><i class='icon-resize-full' /></span>
       </header>
@@ -156,14 +162,14 @@ function Song ({ song }) {
   }
   if (song.type === 'pdf-failed') {
     return (
-      <article class='song page pdf' id={song.id}>
+      <article class='song pdf' id={song.id}>
         <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} />
         <PdfSheet path={song.file} />
       </article>
     )
   }
   return (
-    <article class='song page' id={song.id}>
+    <article class='song' id={song.id}>
       <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} />
       {map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap} />)}
     </article>

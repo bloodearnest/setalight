@@ -7,11 +7,6 @@
 
 }
 
-body {
-  width: 100%;
-  user-select: none;
-}
-
 :root {
   /*
   We use vw in order to autoscale text to window width. 3vw seems
@@ -23,10 +18,21 @@ body {
 }
 
 
-#app {
+body {
+  user-select: none;    /* this just does not work on touch devices well */
+
+  /* we clamp the body to full screen with no overflow, which allows the
+   * horizontal scoll bar for #app to be hidden off screen */
   width: 100vw;
-  white-space: nowrap;  /* lets out inline-block .page's be horizontal list offscreen */
-  overflow-y: hidden;   /* scroll snap doesn't work without this. IDK why */
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  box-sizing: content-box;    /* the default, but lets make sure, as we rely on padding being extra */
+  padding-bottom: 2em;        /* space for the horizonal scroll bar to render offscreen */
+  white-space: nowrap;        /* lets out inline-block .page's be a horizontal list */
+  overflow-y: hidden;         /* scroll snap doesn't work without this. IDK why */
   /* firefox, old standard */
   scroll-snap-type: mandatory;
   scroll-snap-points-x: repeat(100%);
@@ -34,27 +40,27 @@ body {
   scroll-snap-type: x mandatory;
 }
 
-.page {
+.page-container {
   display: inline-block;      /* combined with white-space: nowrap in parent, gives us a horizontal list */
-  padding-left: 0.5vw;        /* TODO: use calc for padding/width? */
-  width: 99.5vw;
-  height: 99.5vh;             /* leave some space at bottom for the horizontal scroll bar of parent */
+  width: 100vw;
+  height: 100vh;
   scroll-snap-align: start;   /* snap to left edge */
-  overflow-y: auto;           /* vertical scroll within this page */
-  overflow-x: hidden;         /* horizontal scroll in this page, just the parent */
+  overflow: hidden;           /* never scroll this element */
 }
 
-.pdf {
-  padding: 0;
-  width: 99vw;
-}
-
-.pdfcontainer {
-  overflow: scroll;
+.page-container > * {
+  box-sizing: content-box;    /* this is the default, but lets make sure */
+  width: 100vw;
+  height: 100vh;
+  padding-right: 2em;         /* off screen space to hide a vertical scroll bar in */
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
 
 .song, .index {
   font-size: var(--scale);
+  padding-left: 0.5vw;
+  width: 99.5vw;
 }
 
 .index header {
