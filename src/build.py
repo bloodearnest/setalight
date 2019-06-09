@@ -108,11 +108,32 @@ def extract_email(email_path, output_dir):
     }
 
 
+def get_chordpro(song):
+    if song['title']:
+        yield '{{title:{}}}'.format(song['title'])
+    if song['key']:
+        yield '{{key:{}}}'.format(song['key'])
+    yield ''
+    for name, section in song['sections'].items():
+        yield '{{comment:{}}}'.format(name)
+        yield section
+        yield ''
+
+
 def build_site(args, setlist):
+    json_data = json.dumps(setlist, indent=4)
+
+    (args.output / 'setlist.json').write_text(json_data)
     template = args.template.read_text()
-    output = template.replace('SETLIST', json.dumps(setlist, indent=4))
+    output = template.replace('SETLIST', json_data)
     output = output.replace('TITLE', setlist['title'])
     (args.output / 'index.html').write_text(output)
+
+    for songid, song in setlist['songs'].items():
+        if song['file'].endswith('.pdf'):
+            text = '\n'.join(get_chordpro(song))
+            fname = song['file'][:-4] + '.txt'
+            (args.output / fname).write_text(text)
     # inline = args.inline.read_text()
     # output = inline.replace('SETLIST', json.dumps(setlist, indent=4))
     # output = output.replace('TITLE', setlist['title'])
