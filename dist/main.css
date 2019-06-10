@@ -48,7 +48,7 @@ body {
   overflow: hidden;           /* never scroll this element */
 }
 
-.page-container > * {
+.page-container > .page {
   box-sizing: content-box;    /* this is the default, but lets make sure */
   width: 100vw;
   height: 100vh;
@@ -59,8 +59,16 @@ body {
 
 .song, .index {
   font-size: var(--scale);
+  box-sizing: border-box;
   padding-left: 0.5vw;
-  width: 99.5vw;
+}
+
+.pdfcontainer {
+  overflow: auto;
+}
+
+.pdfcontainer canvas {
+  filter: invert(85%);  /* this value makes pdf white background match #212121 */
 }
 
 .index header {
@@ -89,30 +97,30 @@ body {
 }
 
 
-.song header.title {
+.page header.title {
   font-size: 130%;
   margin-bottom: 0.5em;
 }
 
-.song header .key {
+.page header .key {
   border: 0;
   outline: 0;
   font-size: var(--scale);
 }
 
-.song header .key option {
+.page header .key option {
   outline: 0;
   font-size: 50%;
 }
 
-.song header.title span.info {
+.page header.title span.info {
   float: right;
   font-size: var(--scale);
   margin-top: 0.2em;
   margin-right: 1em;
 }
 
-.song section {
+.page section {
   margin-bottom: var(--scale);
 }
 

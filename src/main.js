@@ -21,7 +21,7 @@ function SetList ({ setlist }) {
 
 function Page( {children} ) {
   return (
-    <div class="page-container">{children}</div>
+    <div class="page-container"><div class="page">{children}</div></div>
   )
 }
 
@@ -163,8 +163,8 @@ function Song ({ song }) {
   }
   if (song.type === 'pdf-failed') {
     return (
-      <article class='song pdf' id={song.id}>
-        <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} />
+      <article class='pdf' id={song.id}>
+        <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} showInfo={false}/>
         <PdfSheet path={song.file} />
       </article>
     )
@@ -177,22 +177,36 @@ function Song ({ song }) {
   )
 }
 
-function SongTitle ({ song, transposedKey, setKey }) {
+function SongTitle ({ song, transposedKey, setKey, showInfo }) {
   let key = transposedKey || song.key || ''
   let nodes = []
-  if (song.capo) nodes.push('Capo ' + song.capo)
-  if (song.time) nodes.push(song.time)
-  if (song.tempo) nodes.push(song.tempo)
-
-  return (
-    <header class='title'>{ song['title'] }
-      <span class='info'>
+  if (showInfo === undefined || showInfo) {
+    if (song['key']) {
+      nodes.push(
         <select class='key' value={key} onChange={ev => setKey(ev.target.value)}>
           {NOTES_ALL.map(n => <option >{n}</option>)}
         </select>
-        | { nodes.join(' | ') }
-        | <FakeInternalLink target='index'><i class='icon-home' /></FakeInternalLink>
-      </span>
+      )
+      nodes.push(' | ')
+    }
+    if (song.capo) {
+      nodes.push('Capo ' + song.capo)
+      nodes.push(' | ')
+    }
+    if (song.time) {
+      nodes.push(song.time)
+      nodes.push(' | ')
+    }
+    if (song.tempo) {
+      nodes.push(song.tempo)
+      nodes.push(' | ')
+    }
+  }
+  nodes.push(<FakeInternalLink target='index'><i class='icon-home' /></FakeInternalLink>)
+
+  return (
+    <header class='title'>{ song['title'] }
+      <span class='info'>{nodes}</span>
     </header>
   )
 }
