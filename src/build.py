@@ -121,11 +121,18 @@ def get_chordpro(song):
 
 
 def build_site(args, setlist):
-    json_data = json.dumps(setlist, indent=4)
+    pdfdata = {}
+    for id, song in setlist['songs'].items():
+        data = song.pop('pdf', None)
+        if data:
+            pdfdata[id] = data
+    setlist_json = json.dumps(setlist, indent=4)
+    pdfdata_json = json.dumps(pdfdata, indent=4)
 
-    (args.output / 'setlist.json').write_text(json_data)
+    (args.output / 'setlist.json').write_text(setlist_json)
     template = args.template.read_text()
-    output = template.replace('SETLIST', json_data)
+    output = template.replace('SETLIST', setlist_json)
+    output = output.replace('PDFDATA', pdfdata_json)
     output = output.replace('TITLE', setlist['title'])
     (args.output / 'index.html').write_text(output)
 

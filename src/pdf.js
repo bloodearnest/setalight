@@ -6,9 +6,9 @@ import { useEventListener } from './hooks'
 const WORKER_SRC = 'pdf.worker.js'
 PdfJsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC
 
-const Pdf = ({ file, onDocumentComplete, page, scale }) => {
+const Pdf = ({ data, onDocumentComplete, page, scale }) => {
   const containerRef = useRef(null)
-  const [, numPages] = usePdf({ containerRef, file, page, scale })
+  const [, numPages] = usePdf({ containerRef, data, page, scale })
 
   useEffect(() => {
     onDocumentComplete(numPages)
@@ -21,14 +21,14 @@ Pdf.defaultProps = {
   onDocumentComplete: () => {}
 }
 
-export const usePdf = ({ containerRef, file, page = 1, scale = 1 }) => {
+export const usePdf = ({ containerRef, data, page = 1, scale = 1 }) => {
   const [pdf, setPdf] = useState()
   const [width, setWidth] = useState(window.innerWidth)
 
   useEffect(() => {
-    const config = { url: file }
+    const config = { data: data }
     PdfJsLib.getDocument(config).promise.then(setPdf)
-  }, [file])
+  }, [data])
 
   // handle changes
   useEffect(() => {

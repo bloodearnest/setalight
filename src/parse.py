@@ -1,3 +1,4 @@
+import base64
 from collections import OrderedDict, defaultdict
 import itertools
 import os
@@ -499,6 +500,7 @@ def parse_pdf(path, debug):
 
     if not song['sections']:
         song['type'] = 'pdf-failed'
+        song['pdf'] = base64.b64encode(path.read_bytes()).decode('utf8')
 
     return song
 

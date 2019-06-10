@@ -8,7 +8,7 @@ import Pdf from './pdf'
 
 
 // the main application component
-function SetList ({ setlist }) {
+function SetList ({ setlist, }) {
   const [order, setOrder] = useState(setlist.order)
   const setNewOrder = useCallback(o => setOrder(o), [order, setOrder])
   return (
@@ -139,7 +139,7 @@ function Index ({ setlist, order, setOrder }) {
   )
 }
 
-function PdfSheet ({ path }) {
+function PdfSheet ({ data }) {
   const [zoom, setZoom] = useState(1.0)
 
   const zoomCallback = useCallback(e => {
@@ -150,7 +150,7 @@ function PdfSheet ({ path }) {
 
   return (
     <div class='pdfcontainer' onwheel={zoomCallback}>
-      <Pdf file={path} scale={zoom} />
+      <Pdf data={data} scale={zoom} />
     </div>
   )
 }
@@ -165,7 +165,7 @@ function Song ({ song }) {
     return (
       <article class='pdf' id={song.id}>
         <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} showInfo={false}/>
-        <PdfSheet path={song.file} />
+        <PdfSheet data={PDFDATA[song.id]} />
       </article>
     )
   }
@@ -306,10 +306,14 @@ function Line ({ line, transposeMap }) {
 function SetAlight (original_setlist, element) {
   let setlist = copy(original_setlist)
   console.log(setlist)
-  render(<SetList setlist={setlist} />, element)
+  render(<SetList setlist={setlist}/>, element)
 }
 
 const SETLIST = JSON.parse(document.getElementById('setlist').innerHTML)
-const app = document.getElementById('app')
+const PDFDATA = JSON.parse(document.getElementById('pdfdata').innerHTML)
+for (const id of Object.keys(PDFDATA)) {
+  PDFDATA[id] = window.atob(PDFDATA[id])
+}
 
+const app = document.getElementById('app')
 SetAlight(SETLIST, app)
