@@ -85,14 +85,13 @@ function Index ({ setlist, order, setOrder }) {
   }
 
   let messages = []
-  /*
+
   if (setlist.html) {
     for (const msg of setlist.html) {
       messages.push(<section dangerouslySetInnerHTML={{__html: msg}}/>)
     }
-  } else
-  */
-  if (setlist.text) {
+  }
+  else if (setlist.text) {
     for (const msg of setlist.text) {
       messages.push(<pre>{msg}</pre>)
     }
@@ -105,7 +104,7 @@ function Index ({ setlist, order, setOrder }) {
 
   return (
     <article class='index' id='index'>
-      <header>{ setlist.title }
+      <header class="title">{ setlist.title }
         <span class='fullscreen' onclick={toggleSetlist} ontouchstart={toggleSetlist}><i class='icon-resize-full' /></span>
       </header>
       <table class='songlist'>

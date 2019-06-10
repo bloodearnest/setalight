@@ -42,12 +42,13 @@ body {
 
 .page-container {
   display: inline-block;      /* combined with white-space: nowrap in parent, gives us a horizontal list */
+  white-space: normal;        /* return to normal */
   width: 100vw;
   height: 100vh;
   scroll-snap-align: start;   /* snap to left edge */
   overflow: hidden;           /* never scroll this element */
 }
-
+ class="title"
 .page-container > .page {
   box-sizing: content-box;    /* this is the default, but lets make sure */
   width: 100vw;
@@ -78,8 +79,6 @@ body {
 .index header span.fullscreen {
   float: right;
   font-size: var(--scale);
-  margin-top: 0.2em;
-  margin-right: 1em;
 }
 
 .index .songlist {
@@ -100,6 +99,7 @@ body {
 .page header.title {
   font-size: 130%;
   margin-bottom: 0.5em;
+  width: 100%;
 }
 
 .page header .key {
@@ -116,8 +116,6 @@ body {
 .page header.title span.info {
   float: right;
   font-size: var(--scale);
-  margin-top: 0.2em;
-  margin-right: 1em;
 }
 
 .page section {
