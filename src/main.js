@@ -156,22 +156,28 @@ function PdfSheet ({ data }) {
 
 function Song ({ song }) {
   const [transposedKey, setTransposedKey] = useState(song.key)
-  var transposeMap = null
+  const [longest, setLongest] = useState(null)
+
+  let transposeMap = null
   if (song.key && transposedKey != song.key) {
     transposeMap = calculateTranspose(song.key, transposedKey)
   }
+  let cls = 'song'
+  let showInfo = true
+  let nodes = null
+
   if (song.type === 'pdf-failed') {
-    return (
-      <article class='pdf' id={song.id}>
-        <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} showInfo={false}/>
-        <PdfSheet data={PDFDATA[song.id]} />
-      </article>
-    )
+    cls = 'pdf'
+    showInfo = false
+    nodes = [<PdfSheet data={PDFDATA[song.id]} />]
+  } else {
+    nodes = map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap} />)
   }
+
   return (
-    <article class='song' id={song.id}>
-      <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} />
-      {map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap} />)}
+    <article class={cls} id={song.id}>
+      <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} showInfo={showInfo}/>
+      {nodes}
     </article>
   )
 }
