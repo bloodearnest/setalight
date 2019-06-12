@@ -1,5 +1,5 @@
 import { h, render, Fragment } from 'preact'
-import { useState, useCallback } from 'preact/hooks'
+import { useState, useCallback, useRef, useEffect } from 'preact/hooks'
 import { tokenise, TOKENS } from './chordpro'
 import { map, copy, scrollToInternal, toggleFullScreen, toggleWakeLock } from './platform'
 import { transposeChord, calculateTranspose, NOTES_ALL } from './music'
@@ -155,29 +155,58 @@ function PdfSheet ({ data }) {
 }
 
 function Song ({ song }) {
+  const songRef = useRef(null)
   const [transposedKey, setTransposedKey] = useState(song.key)
   const [longest, setLongest] = useState(null)
 
-  let transposeMap = null
+  var transposeMap = null
   if (song.key && transposedKey != song.key) {
     transposeMap = calculateTranspose(song.key, transposedKey)
   }
   let cls = 'song'
   let showInfo = true
-  let nodes = null
+  let children = null
+
+  function resize() {
+    if (!songRef.current) {
+      return
+    }
+
+    const lines = songRef.current.querySelectorAll('p.line')
+    if (!lines) {
+      return
+    }
+
+    let largest = 0
+    for (const line of lines) {
+      largest = Math.max(line.offsetWidth, largest)
+    }
+    const margin = 0.01 * window.innerWidth
+    const ratio = (window.innerWidth - margin) / largest
+    if (ratio <= 0.99 || ratio >= 1.01) {
+      const scale = 'scale(' + ratio + ')'
+      songRef.current.style.transform = scale
+    }
+  }
+
+  useEffect(resize)
 
   if (song.type === 'pdf-failed') {
     cls = 'pdf'
     showInfo = false
-    nodes = [<PdfSheet data={PDFDATA[song.id]} />]
+    children = <PdfSheet data={PDFDATA[song.id]} />
   } else {
-    nodes = map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap} />)
+    children = (
+      <div class="lyric-container" ref={songRef}>
+      {map(song.sections, (name, section) => <Section name={name} section={section} transposeMap={transposeMap} resize={resize} />)}
+      </div>
+    )
   }
 
   return (
     <article class={cls} id={song.id}>
       <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} showInfo={showInfo}/>
-      {nodes}
+      {children}
     </article>
   )
 }
@@ -216,17 +245,19 @@ function SongTitle ({ song, transposedKey, setKey, showInfo }) {
   )
 }
 
-function Section ({ name, section, transposeMap }) {
+function Section ({ name, section, transposeMap, resize }) {
   const [collapsed, setCollapsed] = useState(false)
   const [chords, setChords] = useState(true)
   const lines = section.split(/\n/)
   const toggleCollapsed = e => {
     e.preventDefault()
     setCollapsed(!collapsed)
+    setTimeout(resize, 100)
   }
   const toggleChords = e => {
     e.preventDefault()
     setChords(!chords)
+    setTimeout(resize, 100)
   }
   const _class = (collapsed ? 'collapsed ' : ' ') + (chords ? ' ' : 'hide-chords')
   return (
@@ -305,7 +336,7 @@ function Line ({ line, transposeMap }) {
         break
     }
   }
-  return <p className={'line ' + line_type}>{nodes}</p>
+  return <Fragment><p className={'line ' + line_type}>{nodes}</p><br/></Fragment>
 }
 
 function SetAlight (original_setlist, element) {

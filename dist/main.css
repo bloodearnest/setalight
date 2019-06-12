@@ -4,6 +4,7 @@
   font-family: Verdana, Arial, Helvetica, sans-serif;
   background-color: #212121;
   color: #FAFAFA;
+  font-size: inherit;
 
 }
 
@@ -48,7 +49,7 @@ body {
   scroll-snap-align: start;   /* snap to left edge */
   overflow: hidden;           /* never scroll this element */
 }
- class="title"
+
 .page-container > .page {
   box-sizing: content-box;    /* this is the default, but lets make sure */
   width: 100vw;
@@ -59,7 +60,7 @@ body {
 }
 
 .song, .index {
-  font-size: var(--scale);
+  font-size: 3vw;
   box-sizing: border-box;
   padding-left: 0.5vw;
 }
@@ -78,7 +79,6 @@ body {
 
 .index header span.fullscreen {
   float: right;
-  font-size: var(--scale);
 }
 
 .index .songlist {
@@ -95,9 +95,14 @@ body {
   border-bottom: 2px dashed #fff;
 }
 
+.song .lyric-container {
+  transition: 1s;
+  transition-timing-function: ease-in-out;
+  transform-origin: left top;
+}
 
 .page header.title {
-  font-size: 130%;
+  font-size: 120%;
   margin-bottom: 0.5em;
   width: 100%;
 }
@@ -105,7 +110,6 @@ body {
 .page header .key {
   border: 0;
   outline: 0;
-  font-size: var(--scale);
 }
 
 .page header .key option {
@@ -114,11 +118,10 @@ body {
 
 .page header.title span.info {
   float: right;
-  font-size: var(--scale);
 }
 
 .page section {
-  margin-bottom: var(--scale);
+  margin-bottom: 1vh;
 }
 
 /* section headers */
@@ -132,10 +135,42 @@ body {
 .song section header .collapse.toggle { display: inline; }
 .song section header .show-chords.toggle { font-size: 80%; }
 
+.song section p.line { display: inline-block; }
+.song section p.line span { display: inline-block; }
+
+.song section p .chord {
+  font-weight: bold;
+  font-size: 80%;
+  color: #FFF;
+  padding-right: 0.6em;
+}
+
+.song section p .comment {
+  font-size: 90%;
+  font-style: italic;
+}
+
+.song section p .chordlyric {
+  display: inline-block;
+  position: relative;
+  vertical-align: bottom;
+}
+
+/* chord/lyric line display */
+.song section p.both {
+  position: relative;
+  white-space: pre;
+}
+
+.song section p .chordlyric span.chord { float: left }
+.song section p .chordlyric span.comment { float: left }
+.song section p .chordlyric span.lyric { float: left; clear: both }
+
 
 /* collapse section styles */
 .song section.collapsed { margin-bottom: 0; }
 .song section.collapsed p { display: none; }
+.song section.collapsed br { display: none; }
 .song section.collapsed header span.toggle { color: #999; }
 .song section.collapsed header span.toggle i { color: #999; }
 .song section.collapsed header .expand.toggle   { display: inline; }
@@ -158,33 +193,4 @@ body {
 }
 .song section.hide-chords p.line.chords { display: none; }
 
-/* chord/lyric line display */
-.song section p.both {
-  position: relative;
-  white-space: pre;
-}
-
-.song .section p.line span { display: inline-block; }
-
-.song section p .chord {
-  font-weight: bold;
-  font-size: 80%;
-  color: #FFF;
-  padding-right: 0.6em;
-}
-
-.song section p .comment {
-  font-size: 90%;
-  font-style: italic;
-}
-
-.song section p .chordlyric {
-  display: inline-block;
-  position: relative;
-  vertical-align: bottom;
-}
-
-.song section p .chordlyric span.chord { float: left }
-.song section p .chordlyric span.comment { float: left }
-.song section p .chordlyric span.lyric { float: left; clear: both }
 
