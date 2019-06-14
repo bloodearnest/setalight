@@ -248,7 +248,11 @@ function SongTitle ({ song, transposedKey, setKey, showInfo }) {
 function Section ({ name, section, transposeMap, resize }) {
   const [collapsed, setCollapsed] = useState(false)
   const [chords, setChords] = useState(true)
-  const lines = section.split(/\n/)
+  const className = (collapsed ? 'collapsed ' : ' ') + (chords ? ' ' : 'hide-chords')
+  const rawLines = section.split(/\n/)
+  const lines = rawLines.map(l => tokenise(l))
+  const isChords = lines.every(([type, _]) => type === 'chords')
+
   const toggleCollapsed = e => {
     e.preventDefault()
     setCollapsed(!collapsed)
@@ -259,14 +263,19 @@ function Section ({ name, section, transposeMap, resize }) {
     setChords(!chords)
     setTimeout(resize, 100)
   }
-  const _class = (collapsed ? 'collapsed ' : ' ') + (chords ? ' ' : 'hide-chords')
+
+  let showChords = <span class='show-chords toggle' onclick={toggleChords} ontouchstart={toggleChords}>A♭</span>
+  if (isChords) {
+    showChords = null
+  }
+
   return (
-    <section className={_class}>
+    <section className={className}>
       <header>
         <span class='name toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}>{name}</span>
         <span class='collapse toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> <i class='icon-angle-up' /></span>
         <span class='expand toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> <i class='icon-angle-down' /></span>
-        &nbsp;<span class='show-chords toggle' onclick={toggleChords} ontouchstart={toggleChords}>A♭</span>
+        &nbsp;{showChords}
       </header>
       {lines.map((l) => <Line line={l} transposeMap={transposeMap} />)}
     </section>
@@ -284,7 +293,7 @@ const RAISED_TOKENS = [TOKENS.CHORD, TOKENS.COMMENT]
 function Line ({ line, transposeMap }) {
   // split on [chords] or {directives}, removing undefineds
   var nodes = []
-  const [line_type, tokens] = tokenise(line)
+  const [line_type, tokens] = line
 
   for (var i = 0; i < tokens.length; i += 1) {
     const [current, next] = tokens[i]
