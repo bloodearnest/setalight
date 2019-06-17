@@ -1,13 +1,13 @@
 PYDIR = venv
 VENV = $(PYDIR)/.done
 PYBIN = $(PYDIR)/bin
-SET ?= test_sets/set3.eml
+SET ?= sets/set3.eml
 DIR ?= build
 
 
 .PHONY: build
 build: dist/index.html $(SET)
-	python3 src/build.py $(SET) $(DIR)
+	./setalight $(SET) $(DIR)
 
 dist/inline.html: dist/main.js dist/index.html dist/main.css
 	npx inline-source --compress --root dist dist/index.html > $@

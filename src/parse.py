@@ -1,14 +1,12 @@
 import base64
 from collections import OrderedDict, defaultdict
 import itertools
-import os
 import re
 import subprocess
-import tempfile
 
 import chardet
-
-# from PyPDF2 import PdfFileReader
+from pdfrw import PdfReader
+import pdftitle
 
 
 class RE:
@@ -115,17 +113,15 @@ def infer_key(chords):
         return None
 
 
-# def get_pdf_type(path):
-#    with open(path, 'rb') as f:
-#        pdf = PdfFileReader(f)
-#        creator = pdf.documentInfo['/Creator'].lower()
-#
-#    if 'onsong' in creator:
-#        return 'onsong'
-#    elif 'pdfsharp' in creator:
-#        return 'pdfsharp'
-#    else:
-#        return None
+def add_inferred_key(song):
+    seen = []
+    for section in song['sections'].values():
+        chords = re.findall(r'\[(.*?)\]', section)
+        seen.extend(chords)
+    inferred_key = infer_key(seen)
+    song['inferred_key'] = inferred_key
+    if not song['key']:
+        song['key'] = inferred_key
 
 
 def clean_encoding(contents):
@@ -135,19 +131,42 @@ def clean_encoding(contents):
     return contents
 
 
-def convert_pdf(path):
-    """Converts a pdf file to text.
+def strip_brackets(l):
+    if not l:
+        return l
+    if l[0] == '(' and l[-1] == ')':
+        return l[1:-1].replace('\\', '')
+    else:
+        return l.replace('\\', '')
+
+
+def convert_pdf(song, path, output):
+    """Parse and convert a pdf into text, including metadata.
 
     Deals with various common conversion errors."""
-    cmd = ['pdftotext', '-layout', '-enc', 'UTF-8', '-eol', 'unix', '-nopgbrk']
-    try:
-        _, output = tempfile.mkstemp()
-        subprocess.run(cmd + [str(path), output])
-        with open(output, 'r') as f:
-            contents = f.read()
-    finally:
-        os.unlink(output)
 
+    meta = PdfReader(str(path)).Info
+    song['author'] = strip_brackets(meta.Author)
+    song['creator'] = strip_brackets(meta.Creator)
+    song['producer'] = strip_brackets(meta.Producer)
+    if meta.Title:
+        # explicit title in metadata, use that. Fairly rare.
+        song['title'] = strip_brackets(meta.Title.strip())
+    else:
+        # multiline titles get mangles when converting to text, so we use
+        # a library that uses heuristics to guess the title.
+        # It is slow, though
+        try:
+            title = pdftitle.get_title_from_file(str(path)).strip()
+        except Exception:
+            pass
+        else:
+            song['title'] = re.sub(r'([a-z])([A-Z])', r'\1 \2', title)
+
+    cmd = ['pdftotext', '-layout', '-enc', 'UTF-8', '-eol', 'unix', '-nopgbrk']
+    subprocess.run(cmd + [str(path), output])
+    with open(output, 'r') as f:
+        contents = f.read()
     # fix various issues
     contents = clean_encoding(contents)
     # TODO: we probably enforce ASCII, stripping unicode?
@@ -207,14 +226,14 @@ def chord_indicies(chord_line):
         i = chord_index + len(chord)
 
 
-def is_chord_line(tokens):
+def is_chord_line(tokens, comments=True):
     """Is this line a chord line?"""
     chords = not_chords = 0
     for t in tokens:
         # bars
         if t == '|':
             chords += 1
-        elif t[0] == '(' or t[-1] == ')':
+        elif comments and t[0] == '(' and t[-1] == ')':
             # directions like (To Pre-Chorus) that appear in chord lines
             chords += 1
         elif RE.CHORD.match(t):
@@ -333,22 +352,34 @@ def fix_superscript_line(superscript, chords):
     return ''.join(out)
 
 
-def parse_header(header):
+def parse_header(song, header):
     # first line has 'Key - X' or 'Key of X'
+    title = song['title']
+    if title:
+        zipped = zip(title.lower(), header[0].lower())
+        for i, (t, h) in enumerate(zipped):
+            if t != h:
+                break
+        header[0] = header[0][i:]
+
+    parsed_title = []
     key = RE.KEY.search(header[0])
     if key:
         groupdict = key.groupdict()
-        yield 'key', groupdict.get('key')
-        yield 'capo', groupdict.get('capo')
+        song['key'] = groupdict.get('key')
+        song['capo'], groupdict.get('capo')
         position = key.span()[0]
-        yield 'title', header[0][:position].strip()
+        parsed_title.append(header[0][:position].strip())
     elif ' key ' in header[0].lower():
         # we sometimes can't extract the actual key, and are left with "Key - "
         # so clean that up
         position = header[0].lower().find(' key ')
-        yield 'title', header[0][:position].strip()
+        parsed_title.append(header[0][:position].strip())
     else:
-        yield 'title', header[0].strip()
+        parsed_title.append(header[0].strip())
+
+    if song['title'] is None:
+        song['title'] = ' '.join(parsed_title)
 
     # is there a second header line?
     if len(header) > 1:
@@ -364,13 +395,18 @@ def parse_header(header):
             if tempo:
                 yield 'tempo', tempo.groups()[0]
                 pos = min(pos, tempo.span()[0])
-        yield 'author', header[1][:pos].strip()
+        author = header[1][:pos].strip()
+        current = song.get(author)
+        if current and current.lower() != author.lower():
+            song['alt_author'] = author
+        else:
+            song['author'] = author
 
     if len(header) > 2:
-        yield 'blurb', '\n'.join(header[2:])
+        song['blurb'] = '\n'.join(header[2:])
 
 
-def parse_pdf(path, debug):
+def parse_pdf(path, build_dir):
     """Parse a pdf intro plain text.
 
     Right now this is simple and a bit brittle. It converts the pdf to text
@@ -380,12 +416,9 @@ def parse_pdf(path, debug):
     In the future, it could parse the pdf directly.
     """
 
-    sheet = convert_pdf(path)
-    if debug:
-        print(sheet)
-
     song = new_song()
     song['type'] = 'pdf'
+    sheet = convert_pdf(song, path, str(build_dir / (path.stem + '.raw')))
 
     sheet_lines = sheet.split('\n')
     # skip any leading blank lines
@@ -395,30 +428,47 @@ def parse_pdf(path, debug):
 
     lines = sheet_lines[i:]
 
-    if RE.SECTION.search(lines[0]) or is_chord_line(tokenise_chords(lines[0])):
-        line_iter = iter(lines)
-    else:  # must be some kind of title block
-        header = []
-        for i, line in enumerate(lines[:6]):
-            if line.strip():
-                header.append(line)
-            else:
-                # found the end of the header
-                song.update(dict(parse_header(header)))
-                line_iter = iter(lines[i:])
-                break
+    failed = False
+    header = []
+    for i, line in enumerate(lines[:10]):
+        if RE.SECTION.search(line):
+            break
+        elif is_chord_line(tokenise_chords(line), comments=False):
+            break
+        elif search(RE.CCLI, line):
+            failed = True
+            parse_legal(song, lines[i:])
+            break
         else:
-            # no discernable header ended by blank line
-            line_iter = iter(lines)
+            header.append(line)
+    else:
+        # no discernable header, so go from start
+        i = 0
 
-    # default name
+    if header:
+        parse_header(song, header)
+
+    parse_sections(song, iter(lines[i:]))
+
+    if failed or not song['sections']:
+        song['type'] = 'pdf-failed'
+        song['pdf'] = base64.b64encode(path.read_bytes()).decode('utf8')
+
+    return song
+
+
+def parse_legal(song, lines):
+    lines = list(lines)
+    if search(RE.CCLI, lines[0]):
+        song['ccli'] = search.match.groups()[0]
+    song['legal'] += '\n'.join(l.strip() for l in lines)
+
+
+def parse_sections(song, line_iter):
     section_name = None
     section_lines = []
     chord_line = None
     superscript_line = None
-
-    # set a default first section name, in case it's missing
-    chord_seen = []
 
     for line in line_iter:
         if not line.strip():  # skip blank lines
@@ -477,32 +527,16 @@ def parse_pdf(path, debug):
 
     # did we reached the CCLI number
     if ccli is not None:
-        song['ccli'] = ccli.groups()[0]
-        song['legal'] += line.strip() + '\n'.join(l.strip() for l in line_iter)
+        parse_legal(song, line_iter)
 
     # convert into chordpro
     for name, section_lines in song['sections'].items():
         for chords, _ in section_lines:
             if not chords:
                 continue
-            for c in chords.split(' '):
-                chord_seen.append(c.strip())
         song['sections'][name] = '\n'.join(
             chordpro_line(c, l) for c, l in section_lines
         )
-
-    inferred_key = infer_key(chord_seen)
-    song['inferred_key'] = inferred_key
-    if not song['key']:
-        song['key'] = inferred_key
-    if debug:
-        print_song(song)
-
-    if not song['sections']:
-        song['type'] = 'pdf-failed'
-        song['pdf'] = base64.b64encode(path.read_bytes()).decode('utf8')
-
-    return song
 
 
 def new_song():

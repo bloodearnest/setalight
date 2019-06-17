@@ -15,7 +15,7 @@ logger = logging.getLogger('setalight')
 parser = argparse.ArgumentParser()
 parser.add_argument(
     'input', type=Path, help='email file or directory of files to process')
-parser.add_argument('output', type=Path, default='setlist',
+parser.add_argument('build', type=Path, default='setlist',
                     help='directory to build setlist in')
 parser.add_argument('--template', type=Path, default=Path('dist/index.html'),
                     help='template to use')
@@ -60,7 +60,7 @@ def valid_html_part(text):
     return True
 
 
-def extract_email(email_path, output_dir):
+def extract_email(email_path, build_dir):
     with email_path.open('rb') as fp:
         msg = email.message_from_binary_file(fp)
 
@@ -80,7 +80,7 @@ def extract_email(email_path, output_dir):
             if part_type == 'text/html':
                 if not valid_html_part(payload.decode('utf8')):
                     continue
-            path = output_dir / filename
+            path = build_dir / filename
             path.write_bytes(payload)
             paths.append(path)
         else:
@@ -129,22 +129,22 @@ def build_site(args, setlist):
     setlist_json = json.dumps(setlist, indent=4)
     pdfdata_json = json.dumps(pdfdata, indent=4)
 
-    (args.output / 'setlist.json').write_text(setlist_json)
+    (args.build / 'setlist.json').write_text(setlist_json)
     template = args.template.read_text()
     output = template.replace('SETLIST', setlist_json)
     output = output.replace('PDFDATA', pdfdata_json)
     output = output.replace('TITLE', setlist['title'])
-    (args.output / 'index.html').write_text(output)
+    (args.build / 'index.html').write_text(output)
 
     for songid, song in setlist['songs'].items():
         if song['file'].endswith('.pdf'):
             text = '\n'.join(get_chordpro(song))
             fname = song['file'][:-4] + '.txt'
-            (args.output / fname).write_text(text)
+            (args.build / fname).write_text(text)
     # inline = args.inline.read_text()
     # output = inline.replace('SETLIST', json.dumps(setlist, indent=4))
     # output = output.replace('TITLE', setlist['title'])
-    # (args.output / 'inline.html').write_text(output)
+    # (args.build / 'inline.html').write_text(output)
     files = [
         'node_modules/@bundled-es-modules/pdfjs-dist/build/pdf.worker.js',
         'node_modules/drag-drop-touch-polyfill/DragDropTouch.js',
@@ -153,7 +153,7 @@ def build_site(args, setlist):
         'dist/main.js',
     ]
     for f in files:
-        shutil.copy(f, str(args.output / Path(f).name))
+        shutil.copy(f, str(args.build / Path(f).name))
 
 
 def get_song_id(song, i):
@@ -169,14 +169,14 @@ def main(args):
     if args.debug:
         logger.setLevel(logging.DEBUG)
 
-    args.output.mkdir(parents=True, exist_ok=True)
-    for p in args.output.iterdir():
+    args.build.mkdir(parents=True, exist_ok=True)
+    for p in args.build.iterdir():
         p.unlink()
 
     if args.input.is_dir():
         paths = []
         for path in args.input.iterdir():
-            dst = args.output / path.name
+            dst = args.build / path.name
             shutil.copy(path, dst)
             paths.append(dst)
             logger.debug('copied {} to {}'.format(str(path), str(dst)))
@@ -184,7 +184,7 @@ def main(args):
         paths.sort()
         raw_setlist = {'paths': paths}
     else:
-        raw_setlist = extract_email(args.input, args.output)
+        raw_setlist = extract_email(args.input, args.build)
 
     songs = {}
     order = []
@@ -192,7 +192,7 @@ def main(args):
     for i, path in enumerate(raw_setlist['paths']):
         song = None
         if path.suffix == '.pdf':
-            song = parse.parse_pdf(path, args.debug)
+            song = parse.parse_pdf(path, args.build)
         elif path.suffix == '.onsong':
             song = parse.parse_onsong(path)
         if song:
@@ -202,10 +202,11 @@ def main(args):
             if not song['title']:
                 song['title'] = cleanup_filename(path.stem)
             order.append(id)
+            parse.add_inferred_key(song)
             songs[id] = song
 
     setlist = {
-        'title': raw_setlist.get('subject', str(args.output)),
+        'title': raw_setlist.get('subject', str(args.build)),
         'text': raw_setlist.get('text'),
         'html': raw_setlist.get('html'),
         'leaders': raw_setlist.get('from'),
