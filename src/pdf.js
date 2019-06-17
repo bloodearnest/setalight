@@ -14,7 +14,7 @@ const Pdf = ({ data, onDocumentComplete, page, scale }) => {
     onDocumentComplete(numPages)
   }, [numPages])
 
-  return <div ref={containerRef} />
+  return <div class="pdfcontainer" ref={containerRef} />
 }
 
 Pdf.defaultProps = {
@@ -41,13 +41,33 @@ export const usePdf = ({ containerRef, data, page = 1, scale = 1 }) => {
 
   // draw a page of the pdf
   const drawPDF = (page) => {
-    const pageWidth = page.getViewport({ scale: 1.0 }).width
-    const base_scale = width / pageWidth
-    const viewport = page.getViewport({ scale: base_scale * scale })
+    const size = page.getViewport({ scale: 1.0 })
+    const crop = {
+      left: parseInt(0.05 * size.width),
+      top: parseInt(0.05 * size.height),
+      right: parseInt(0.1 * size.width),
+      bottom: parseInt(0.1 * size.height),
+    }
+    const targetWidth = size.width - crop.left - crop.right
+    const targetHeight = size.height - crop.top - crop.bottom
+
+    const base_scale = width / targetWidth
+    // y coords inverted!
+    const view = [
+      crop.left,
+      crop.bottom,
+      size.width - crop.right,
+      size.height - crop.top,
+    ]
+    const old = page.view
+    page._pageInfo.view = view
+    const viewport = page.getViewport({ scale: base_scale * scale})
+    console.log(viewport)
+
     const canvas = document.createElement('canvas')
     const canvasContext = canvas.getContext('2d')
-    canvas.height = viewport.height
     canvas.width = viewport.width
+    canvas.height = viewport.height
     const renderContext = {
       canvasContext,
       viewport

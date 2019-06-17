@@ -138,22 +138,6 @@ function Index ({ setlist, order, setOrder }) {
   )
 }
 
-function PdfSheet ({ data }) {
-  const [zoom, setZoom] = useState(1.0)
-
-  const zoomCallback = useCallback(e => {
-    e.preventDefault()
-    const newZoom = zoom + (e.deltaY * 0.001)
-    setZoom(Math.min(Math.max(0.5, newZoom), 3))
-  }, [zoom, setZoom])
-
-  return (
-    <div class='pdfcontainer' onwheel={zoomCallback}>
-      <Pdf data={data} scale={zoom} />
-    </div>
-  )
-}
-
 function Song ({ song }) {
   const songRef = useRef(null)
   const [transposedKey, setTransposedKey] = useState(song.key)
@@ -194,7 +178,7 @@ function Song ({ song }) {
   if (song.type === 'pdf-failed') {
     cls = 'pdf'
     showInfo = false
-    children = <PdfSheet data={PDFDATA[song.id]} />
+    children = <Pdf data={PDFDATA[song.id]} />
   } else {
     children = (
       <div class="lyric-container" ref={songRef}>
