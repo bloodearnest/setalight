@@ -157,11 +157,16 @@ body {
   vertical-align: bottom;
 }
 
+.song section p .space {
+  white-space: pre;
+}
+
 /* chord/lyric line display */
 .song section p.both {
   position: relative;
   white-space: pre;
 }
+
 
 .song section p .chordlyric span.chord { float: left }
 .song section p .chordlyric span.comment { float: left }

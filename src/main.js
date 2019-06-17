@@ -20,9 +20,7 @@ function SetList ({ setlist, }) {
 }
 
 function Page( {children} ) {
-  return (
-    <div class="page-container"><div class="page">{children}</div></div>
-  )
+  return <div class="page-container"><div class="page">{children}</div></div>
 }
 
 function FakeInternalLink ({ text, target, children }) {
