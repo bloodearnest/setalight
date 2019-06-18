@@ -175,11 +175,9 @@ body {
 
 .song section p .chordlyric span.chord {
   float: left;
-  max-width: 1rem;
 }
 .song section p .chordlyric span.comment {
   float: left;
-  max-width: 1rem;
 }
 .song section p .chordlyric span.lyric { float: left; clear: both }
 
