@@ -143,7 +143,12 @@ body {
   font-weight: bold;
   font-size: 80%;
   color: #FFF;
-  padding-right: 0.6em;
+}
+.song section p .chord + .chord {
+  padding-left: 1rem;
+}
+.song section p .spaced-chord + .spaced-chord {
+  padding-left: 1rem;
 }
 
 .song section p .comment {
@@ -168,9 +173,18 @@ body {
 }
 
 
-.song section p .chordlyric span.chord { float: left }
-.song section p .chordlyric span.comment { float: left }
+.song section p .chordlyric span.chord {
+  float: left;
+  max-width: 1rem;
+}
+.song section p .chordlyric span.comment {
+  float: left;
+  max-width: 1rem;
+}
 .song section p .chordlyric span.lyric { float: left; clear: both }
+
+.song section p .chordLyric span.chord,
+.song section p .chordLyric span.chord,
 
 
 /* collapse section styles */

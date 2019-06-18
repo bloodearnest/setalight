@@ -49,7 +49,7 @@ class RE:
         (?P<bass>/[A-JZ][♯♭b#]?)?           # BASS
         $
     """, re.VERBOSE)
-    CCLI = re.compile(r'CCLI ?Song ?# ?(\d+)', re.I)
+    CCLI = re.compile(r'CCLI.*# ?(\d+)', re.I)
     # used to split a chord line into tokens including splitting on |
     CHORD_SPLIT = re.compile(r"""
         [ ](\([^\d].*?\))|  # matches (To SECTION) or (CHORD), keep
@@ -527,7 +527,7 @@ def parse_sections(song, line_iter):
 
     # did we reached the CCLI number
     if ccli is not None:
-        parse_legal(song, line_iter)
+        parse_legal(song, [line] + list(line_iter))
 
     # convert into chordpro
     for name, section_lines in song['sections'].items():

@@ -139,7 +139,6 @@ function Index ({ setlist, order, setOrder }) {
 function Song ({ song }) {
   const songRef = useRef(null)
   const [transposedKey, setTransposedKey] = useState(song.key)
-  const [longest, setLongest] = useState(null)
 
   var transposeMap = null
   if (song.key && transposedKey != song.key) {
@@ -238,11 +237,13 @@ function Section ({ name, section, transposeMap, resize }) {
   const toggleCollapsed = e => {
     e.preventDefault()
     setCollapsed(!collapsed)
+    // use custom event?
     setTimeout(resize, 100)
   }
   const toggleChords = e => {
     e.preventDefault()
     setChords(!chords)
+    // use custom event?
     setTimeout(resize, 100)
   }
 
@@ -280,25 +281,37 @@ function Line ({ line, transposeMap }) {
   for (var i = 0; i < tokens.length; i += 1) {
     const [current, next] = tokens[i]
     var className = TOKEN_CLASS[current.type]
+    var value = current.value
 
     switch (current.type) {
       case TOKENS.CHORD:
-      case TOKENS.COMMENT:
-        var wrapperClass = 'chordlyric '
-        var lyric = ' '
-        var value = current.value
-        // is the next token not a chord/comment?
-        if (next && !RAISED_TOKENS.includes(next.type)) {
-          if (next.type === TOKENS.SPACE || next.value[0] === '-' || next.value[1] === '-') {
-            wrapperClass += 'spaced-chord'
-          }
-          // pull the next lyric into this node
-          lyric = next.value
-          i += 1
-        }
-        if (transposeMap && current.type === TOKENS.CHORD && value !== '|') {
+        if (transposeMap && value !== '|') {
           value = transposeChord(value, transposeMap)
         }
+      case TOKENS.COMMENT:
+        var wrapperClass = 'chordlyric '
+        var lyric = ''
+        // is the next token not a chord/comment?
+        if (next && !RAISED_TOKENS.includes(next.type)) {
+          while (value.length > lyric.length - 1) {
+            const [c, n] = tokens[i]
+            if (!n) break
+            if (RAISED_TOKENS.includes(n.type)) break
+            lyric += n.value
+            i += 1
+          }
+        }
+
+        if (lyric === '') {
+          lyric = ' '
+          wrapperClass += 'spaced-chord'
+        } else {
+          const content = lyric.replace(/ /, '')
+          if (content === '' || content === '-') {
+            wrapperClass += 'spaced-chord'
+          }
+        }
+
         if (line_type === 'both') {
           nodes.push(
             <span className={wrapperClass}>
@@ -315,7 +328,9 @@ function Line ({ line, transposeMap }) {
 
       case TOKENS.HYPHEN:
       case TOKENS.SPACE:
-        nodes.push(<span className={className}>{current.value}</span>)
+        if (line_type !== 'chords') {
+          nodes.push(<span className={className}>{current.value}</span>)
+        }
         break
 
       case TOKENS.LYRIC:
