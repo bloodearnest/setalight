@@ -31,6 +31,7 @@ class RE:
         turnaround|
         ending|
         coda|
+        tag|
         outro
         )\)?
     """, re.I | re.VERBOSE)

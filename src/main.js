@@ -163,7 +163,8 @@ function Song ({ song }) {
       largest = Math.max(line.offsetWidth, largest)
     }
     const margin = 0.01 * window.innerWidth
-    const ratio = (window.innerWidth - margin) / largest
+    const ratio = Math.min(1.3, (window.innerWidth - margin) / largest)
+    console.log(ratio)
     if (ratio <= 0.99 || ratio >= 1.01) {
       const scale = 'scale(' + ratio + ')'
       songRef.current.style.transform = scale

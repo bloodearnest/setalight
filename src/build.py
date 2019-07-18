@@ -141,10 +141,11 @@ def build_site(args, setlist):
             text = '\n'.join(get_chordpro(song))
             fname = song['file'][:-4] + '.txt'
             (args.build / fname).write_text(text)
-    # inline = args.inline.read_text()
-    # output = inline.replace('SETLIST', json.dumps(setlist, indent=4))
-    # output = output.replace('TITLE', setlist['title'])
-    # (args.build / 'inline.html').write_text(output)
+    inline = args.inline.read_text()
+    output = inline.replace('SETLIST', json.dumps(setlist, indent=4))
+    output = output.replace('PDFDATA', pdfdata_json)
+    output = output.replace('TITLE', setlist['title'])
+    (args.build / 'inline.html').write_text(output)
     files = [
         'node_modules/@bundled-es-modules/pdfjs-dist/build/pdf.worker.js',
         'node_modules/drag-drop-touch-polyfill/DragDropTouch.js',
