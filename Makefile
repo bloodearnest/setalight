@@ -15,7 +15,7 @@ dist/inline.html: dist/main.js dist/index.html dist/main.css
 dist/index.html: dist/main.js
 
 dist/main.js: src/*.js webpack.config.js package.json
-	npx webpack
+	./node_modules/.bin/webpack
 
 clean:
 	rm -f dist/main.js dist/inline.html
@@ -33,4 +33,4 @@ $(VENV): Makefile requirements.txt
 	touch venv/.done
 
 system-dependencies:
-	sudo apt install -y python3 poppler-utils virtualenv
+	sudo apt install -y python3 poppler-utils virtualenv #node

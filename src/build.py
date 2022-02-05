@@ -3,6 +3,7 @@ import email
 import html.parser
 import logging
 import json
+import os
 from pathlib import Path
 import shutil
 
@@ -50,6 +51,8 @@ def cleanup_filename(name):
 
 
 def valid_html_part(text):
+    if not text.strip():
+        return False
     parser = ExtractTextParser()
     parser.feed(text)
     if len(parser.text) == 0:
@@ -77,9 +80,10 @@ def extract_email(email_path, build_dir):
         part_type = part.get_content_type()
         if filename:  # attachment
             payload = part.get_payload(decode=True)
-            if part_type == 'text/html':
+            if part_type in ('text/html', 'text/plain'):
                 if not valid_html_part(payload.decode('utf8')):
                     continue
+            
             path = build_dir / filename
             path.write_bytes(payload)
             paths.append(path)
@@ -141,10 +145,10 @@ def build_site(args, setlist):
             text = '\n'.join(get_chordpro(song))
             fname = song['file'][:-4] + '.txt'
             (args.build / fname).write_text(text)
-    inline = args.inline.read_text()
-    output = inline.replace('SETLIST', json.dumps(setlist, indent=4))
-    output = output.replace('PDFDATA', pdfdata_json)
-    output = output.replace('TITLE', setlist['title'])
+    #inline = args.inline.read_text()
+    #output = inline.replace('SETLIST', json.dumps(setlist, indent=4))
+    #output = output.replace('PDFDATA', pdfdata_json)
+    #output = output.replace('TITLE', setlist['title'])
     (args.build / 'inline.html').write_text(output)
     files = [
         'node_modules/@bundled-es-modules/pdfjs-dist/build/pdf.worker.js',
@@ -192,22 +196,28 @@ def main(args):
 
     for i, path in enumerate(raw_setlist['paths']):
         song = None
+        song_type = None
         if path.suffix == '.pdf':
             song = parse.parse_pdf(path, args.build)
-        elif path.suffix == '.onsong':
+        elif path.suffix in ('.onsong', '.cho', '.txt'):
             song = parse.parse_onsong(path)
         if song:
-            id = get_song_id(song, i)
-            song['id'] = id
+            song_id = get_song_id(song, i)
+            song['id'] = song_id
             song['file'] = path.name
             if not song['title']:
                 song['title'] = cleanup_filename(path.stem)
-            order.append(id)
             parse.add_inferred_key(song)
-            songs[id] = song
+            if song_id in songs:
+                # ok, songs has been attached twice, possible pdf and onsong/chordpro
+                if song['type'] == 'onsong':
+                    songs[song_id] = song
+            else:
+                order.append(song_id)
+                songs[song_id] = song
 
     setlist = {
-        'title': raw_setlist.get('subject', str(args.build)),
+        'title': raw_setlist.get('subject', os.path.basename(args.input)),
         'text': raw_setlist.get('text'),
         'html': raw_setlist.get('html'),
         'leaders': raw_setlist.get('from'),

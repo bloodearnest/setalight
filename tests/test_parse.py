@@ -264,7 +264,7 @@ CHORD_LINES = {
 
 @pytest.mark.parametrize('input,is_chords', CHORD_LINES.items())
 def test_is_chord_line(input, is_chords):
-    assert parse.is_chord_line(input.split()) == is_chords
+    assert parse.is_chord_line(parse.tokenise_chords(input)) == is_chords
 
 
 def chordpro_line_testcases():
@@ -324,6 +324,11 @@ def chordpro_line_testcases():
         "|C#m7 B|E  F#|  C#m7",
         "               Word",
         "[|] [C#m7] [B] [|] [E] [F#] [|] W[C#m7]ord",
+    )
+    yield (  # split chords that have been joined by the parsing
+        "AB",
+        " ",
+        "[A] [B]",
     )
 
 

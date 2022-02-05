@@ -27,7 +27,7 @@ function FakeInternalLink ({ text, target, children }) {
   // this avoids actuall setting window.location.hash, which I think we want
   // also, it avoids the default link drag behaviour
   const go = e => scrollToInternal(target)
-  return <span class='link' onclick={go} ontouchstart={go}>{text}{children}</span>
+  return <span class='link' onpointerdown={go}>{text}{children}</span>
 }
 
 function Index ({ setlist, order, setOrder }) {
@@ -84,6 +84,7 @@ function Index ({ setlist, order, setOrder }) {
 
   let messages = []
 
+  /*
   if (setlist.html) {
     for (const msg of setlist.html) {
       messages.push(<section dangerouslySetInnerHTML={{__html: msg}}/>)
@@ -94,6 +95,7 @@ function Index ({ setlist, order, setOrder }) {
       messages.push(<pre>{msg}</pre>)
     }
   }
+  */
 
   function toggleSetlist (ev) {
     toggleFullScreen()
@@ -103,7 +105,7 @@ function Index ({ setlist, order, setOrder }) {
   return (
     <article class='index' id='index'>
       <header class="title">{ setlist.title }
-        <span class='fullscreen' onclick={toggleSetlist} ontouchstart={toggleSetlist}><i class='icon-resize-full' /></span>
+        <span class='fullscreen' onpointerdown={toggleSetlist} ><i class='icon-resize-full' /></span>
       </header>
       <table class='songlist'>
         {order.map((id, index) => {
@@ -141,8 +143,12 @@ function Song ({ song }) {
   const [transposedKey, setTransposedKey] = useState(song.key)
 
   var transposeMap = null
-  if (song.key && transposedKey != song.key) {
+  console.log("song.key: " + song.key)
+  console.log("transposedKey: " + transposedKey)
+  if (song.key != transposedKey) {
+    console.log("transpose to " + transposedKey)
     transposeMap = calculateTranspose(song.key, transposedKey)
+    console.log(transposeMap)
   }
   let cls = 'song'
   let showInfo = true
@@ -163,8 +169,7 @@ function Song ({ song }) {
       largest = Math.max(line.offsetWidth, largest)
     }
     const margin = 0.01 * window.innerWidth
-    const ratio = Math.min(1.3, (window.innerWidth - margin) / largest)
-    console.log(ratio)
+    const ratio = Math.min(1.6, (window.innerWidth - margin) / largest)
     if (ratio <= 0.99 || ratio >= 1.01) {
       const scale = 'scale(' + ratio + ')'
       songRef.current.style.transform = scale
@@ -185,9 +190,14 @@ function Song ({ song }) {
     )
   }
 
+  let debugKey = function(key, a, b, c) {
+      console.log("setting key: " + key, a, b, c)
+      setTransposedKey(key)
+  }
+
   return (
     <article class={cls} id={song.id}>
-      <SongTitle song={song} transposedKey={transposedKey} setKey={setTransposedKey} showInfo={showInfo}/>
+      <SongTitle song={song} transposedKey={transposedKey} setKey={debugKey} showInfo={showInfo}/>
       {children}
     </article>
   )
@@ -196,11 +206,17 @@ function Song ({ song }) {
 function SongTitle ({ song, transposedKey, setKey, showInfo }) {
   let key = transposedKey || song.key || ''
   let nodes = []
+
+  let setter = function(ev) {
+      console.log(ev)
+      setKey(ev.target.value)
+  }
+  let toggleChords = () => {}
   if (showInfo === undefined || showInfo) {
     if (song['key']) {
       nodes.push(
-        <select class='key' value={key} onChange={ev => setKey(ev.target.value)}>
-          {NOTES_ALL.map(n => <option >{n}</option>)}
+        <select class='key' value={transposedKey} onChange={setter}>
+          {NOTES_ALL.map(n => <option value={n}>{n}</option>)}
         </select>
       )
       nodes.push(' | ')
@@ -248,7 +264,7 @@ function Section ({ name, section, transposeMap, resize }) {
     setTimeout(resize, 100)
   }
 
-  let showChords = <span class='show-chords toggle' onclick={toggleChords} ontouchstart={toggleChords}>A♭</span>
+  let showChords = <span class='show-chords toggle' onpointerdown={toggleChords}>A♭</span>
   if (isChords) {
     showChords = null
   }
@@ -256,9 +272,9 @@ function Section ({ name, section, transposeMap, resize }) {
   return (
     <section className={className}>
       <header>
-        <span class='name toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}>{name}</span>
-        <span class='collapse toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> <i class='icon-angle-up' /></span>
-        <span class='expand toggle' onclick={toggleCollapsed} ontouchstart={toggleCollapsed}> <i class='icon-angle-down' /></span>
+        <span class='name toggle' onpointerdown={toggleCollapsed} >{name}</span>
+        <span class='collapse toggle' onpointerdown={toggleCollapsed}> <i class='icon-angle-up' /></span>
+        <span class='expand toggle' onpointerdown={toggleCollapsed}> <i class='icon-angle-down' /></span>
         &nbsp;{showChords}
       </header>
       {lines.map((l) => <Line line={l} transposeMap={transposeMap} />)}

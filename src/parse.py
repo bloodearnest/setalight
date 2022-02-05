@@ -22,6 +22,7 @@ class RE:
     SECTION = re.compile(r"""^\(?(
         intro|
         verse|
+        v1|v2|v3|v4|v5|
         chorus|
         refrain|
         bridge|
@@ -147,12 +148,13 @@ def convert_pdf(song, path, output):
     Deals with various common conversion errors."""
 
     meta = PdfReader(str(path)).Info
-    song['author'] = strip_brackets(meta.Author)
-    song['creator'] = strip_brackets(meta.Creator)
-    song['producer'] = strip_brackets(meta.Producer)
-    if meta.Title:
-        # explicit title in metadata, use that. Fairly rare.
-        song['title'] = strip_brackets(meta.Title.strip())
+    if meta:
+        song['author'] = strip_brackets(meta.Author)
+        song['creator'] = strip_brackets(meta.Creator)
+        song['producer'] = strip_brackets(meta.Producer)
+        if meta.Title:
+            # explicit title in metadata, use that. Fairly rare.
+            song['title'] = strip_brackets(meta.Title.strip())
     else:
         # multiline titles get mangles when converting to text, so we use
         # a library that uses heuristics to guess the title.
@@ -205,6 +207,11 @@ def tokenise_chords(chord_line):
                 chords.append('|')
             chord = []
         else:
+            if chord:
+                all = ''.join(chord + [c])
+                if all.isalpha() and all.isupper():
+                    chords.append(''.join(chord))
+                    chord = []
             chord.append(c)
 
     if chord:
@@ -367,8 +374,8 @@ def parse_header(song, header):
     key = RE.KEY.search(header[0])
     if key:
         groupdict = key.groupdict()
-        song['key'] = groupdict.get('key')
-        song['capo'], groupdict.get('capo')
+        song['key'] = groupdict.get('key').strip()
+        song['capo'], groupdict.get('capo').strip()
         position = key.span()[0]
         parsed_title.append(header[0][:position].strip())
     elif ' key ' in header[0].lower():
@@ -380,7 +387,7 @@ def parse_header(song, header):
         parsed_title.append(header[0].strip())
 
     if song['title'] is None:
-        song['title'] = ' '.join(parsed_title)
+        song['title'] = (' '.join(parsed_title)).strip()
 
     # is there a second header line?
     if len(header) > 1:
@@ -599,6 +606,9 @@ def parse_onsong(path):
         encoding = 'UTF-16'  # this encoding strips any BOM
     text = clean_encoding(raw.decode(encoding))
 
+    # fix lack of support for ||: and :||
+    text = text.replace('||:', '|').replace(':||', '|')
+
     song = new_song()
     song['type'] = 'onsong'
 
@@ -606,29 +616,34 @@ def parse_onsong(path):
     section = None
     section_lines = []
 
-    line_iter = iter(text.split('\n'))
+    line_iter = iter(text.splitlines())
 
     # parse header
     for line in line_iter:
-        # try detect if there is no header
-        if RE.SECTION.search(line):
-            section = line.strip()
-            break
-
         if search(RE.DIRECTIVE, line):
             meta = META.get(search.match.group('directive'))
+
             if meta:
                 current = song[meta]
-                value = search.match.group('value')
+                value = search.match.group('value').strip()
+
+                # try detect if there is no header
+                if RE.SECTION.search(value):
+                    section = value.strip()
+                    break
+
                 if current:
                     song[meta] += ' ' + value
                 else:
                     song[meta] = value
-            # else:
-            #    print('skipping unknown directive {}'.format(line))
+            else:
+                # try detect if there is no header
+                if RE.SECTION.search(line):
+                    section = line.strip()
+                    break
 
         elif search(RE.KEY, line):
-            song['key'] = search.match.group('key')
+            song['key'] = search.match.group('key').strip()
         elif line.strip():
             if song['title'] is None:
                 song['title'] = line.strip()
@@ -640,7 +655,7 @@ def parse_onsong(path):
             break
 
     for line in line_iter:
-        if not line.strip():
+        if not line.strip():  # blank line, end of section
             # reached the end of a section
             if section is not None and section_lines:
                 song['sections'][section] = '\n'.join(section_lines)
@@ -648,10 +663,17 @@ def parse_onsong(path):
             section_lines = []
             continue
 
-        if RE.SECTION.search(line):
+        if search(RE.DIRECTIVE, line):
+            directive = search.match.group('directive')
+            if directive == 'comment':
+                section_search = search.match.group('value').strip()
+        else:
+            section_search = line
+
+        if RE.SECTION.search(section_search):
             if section is not None and section_lines:
                 song['sections'][section] = '\n'.join(section_lines)
-            section = line.strip()
+            section = section_search.strip()
             section_lines = []
         elif search(RE.CCLI, line):
             song['ccli'] = search.match.groups()[0]
