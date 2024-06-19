@@ -657,12 +657,7 @@ def parse_onsong(path):
             break
 
     for line in line_iter:
-        if not line.strip():  # blank line, end of section
-            # reached the end of a section
-            if section is not None and section_lines:
-                song['sections'][section] = '\n'.join(section_lines)
-            section = None
-            section_lines = []
+        if not line.strip(): 
             continue
 
         if search(RE.DIRECTIVE, line):
