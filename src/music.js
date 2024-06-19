@@ -22,11 +22,16 @@ function calculateTranspose (src, dst) {
 }
 
 function transposeChord (chord, transpose) {
-  const match = chord.match(/^([A-G][b#]?)([^/]*)[/]?([A-G][b#]?)?/)
-  const note = match[1]
-  const rest = match[2]
-  const bass = match[3]
-  return transpose[note] + rest + (bass ? '/' + transpose[bass] : '')
+  if (chord.substr(0, 4).toLowerCase().replace(".", " ") === "nc") {
+    return chord;
+  }
+  const match = chord.match(/^(.*?)([A-G][b#]?)([^/]*)[/]?([A-G][b#]?)?(.*)$/)
+  const prefix = match[1]
+  const note = match[2]
+  const rest = match[3]
+  const bass = match[4]
+  const suffix = match[5]
+  return prefix + transpose[note] + rest + (bass ? '/' + transpose[bass] : '') + suffix
 }
 
 export {

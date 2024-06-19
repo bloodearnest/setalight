@@ -34,3 +34,6 @@ $(VENV): Makefile requirements.txt
 
 system-dependencies:
 	sudo apt install -y python3 poppler-utils virtualenv #node
+
+deploy:
+	scp -r build/* gatewayleeds.net:additional_domains/test.gatewayleeds.net/public_html/build/	

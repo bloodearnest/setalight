@@ -160,6 +160,9 @@ def build_site(args, setlist):
     for f in files:
         shutil.copy(f, str(args.build / Path(f).name))
 
+    for song in setlist["songs"].values():
+        print(f'{song["title"]} ({song["ccli"]})')
+
 
 def get_song_id(song, i):
     if song['ccli']:
@@ -199,7 +202,7 @@ def main(args):
         song_type = None
         if path.suffix == '.pdf':
             song = parse.parse_pdf(path, args.build)
-        elif path.suffix in ('.onsong', '.cho', '.txt'):
+        elif path.suffix in ('.onsong', '.cho', '.txt', '.chopro'):
             song = parse.parse_onsong(path)
         if song:
             song_id = get_song_id(song, i)

@@ -303,7 +303,13 @@ function Line ({ line, transposeMap }) {
     switch (current.type) {
       case TOKENS.CHORD:
         if (transposeMap && value !== '|') {
-          value = transposeChord(value, transposeMap)
+          try {
+            value = transposeChord(value, transposeMap)
+          }
+          catch (err) {
+            console.error(err)
+            value = value + "!"
+          }
         }
       case TOKENS.COMMENT:
         var wrapperClass = 'chordlyric '

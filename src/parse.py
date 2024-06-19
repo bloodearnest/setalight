@@ -33,7 +33,8 @@ class RE:
         ending|
         coda|
         tag|
-        outro
+        outro|
+        mid-section
         )\)?
     """, re.I | re.VERBOSE)
     # this sucker is a beauty
@@ -595,6 +596,7 @@ META = {
     # duration
     'capo': 'capo',
     # meta
+    'ccli': 'ccli',
 }
 
 
