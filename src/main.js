@@ -216,7 +216,7 @@ function SongTitle ({ song, transposedKey, setKey, showInfo }) {
     if (song['key']) {
       nodes.push(
         <select class='key' value={transposedKey} onChange={setter}>
-          {NOTES_ALL.map(n => <option value={n}>{n}</option>)}
+          {NOTES_ALL.map(n => <option class={n == song['key'] ? "default" : ""}value={n}>{n}</option>)}
         </select>
       )
       nodes.push(' | ')

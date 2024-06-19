@@ -116,6 +116,15 @@ body {
   outline: 0;
 }
 
+.page header .key option.default {
+  font-weight: bold;
+}
+
+{
+  outline: 0;
+}
+
+
 .page header.title span.info {
   float: right;
 }
