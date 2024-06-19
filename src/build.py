@@ -1,4 +1,5 @@
 import argparse
+import sys
 import email
 import html.parser
 import logging
@@ -126,6 +127,7 @@ def get_chordpro(song):
 
 def build_site(args, setlist):
     pdfdata = {}
+
     for id, song in setlist['songs'].items():
         data = song.pop('pdf', None)
         if data:
@@ -172,6 +174,12 @@ def get_song_id(song, i):
     else:
         return 'song-{}'.format(i)
 
+VALID_SONG_FILES = [
+    ".chordpro",
+    ".cho",
+    ".txt",
+    ".pdf",
+]
 
 def main(args):
     if args.debug:
@@ -183,6 +191,8 @@ def main(args):
         paths = []
         for path in args.input.iterdir():
             dst = args.build / path.name
+            if dst.suffix not in VALID_SONG_FILES:
+                continue
             if not dst.exists():
                 shutil.copy(path, dst)
                 logger.debug('copied {} to {}'.format(str(path), str(dst)))
@@ -226,6 +236,9 @@ def main(args):
         'songs': songs,
         'order': order,
     }
+
+    if len(songs.items()) == 0:
+        sys.exit("Could not find any songs")
 
     if args.debug:
         for id, song in songs.items():
