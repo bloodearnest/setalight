@@ -178,16 +178,15 @@ def main(args):
         logger.setLevel(logging.DEBUG)
 
     args.build.mkdir(parents=True, exist_ok=True)
-    for p in args.build.iterdir():
-        p.unlink()
 
     if args.input.is_dir():
         paths = []
         for path in args.input.iterdir():
             dst = args.build / path.name
-            shutil.copy(path, dst)
+            if not dst.exists():
+                shutil.copy(path, dst)
+                logger.debug('copied {} to {}'.format(str(path), str(dst)))
             paths.append(dst)
-            logger.debug('copied {} to {}'.format(str(path), str(dst)))
 
         paths.sort()
         raw_setlist = {'paths': paths}

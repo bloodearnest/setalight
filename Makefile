@@ -7,7 +7,8 @@ DIR ?= build
 
 .PHONY: build
 build: dist/index.html $(SET)
-	./setalight $(SET) $(DIR)
+	./setalight $(SET) $(SET)
+	google-chrome $(SET)/index.html
 
 dist/inline.html: dist/main.js dist/index.html dist/main.css
 	npx inline-source --compress --root dist dist/index.html > $@
